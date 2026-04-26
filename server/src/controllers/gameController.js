@@ -289,13 +289,29 @@ export function endRound(roomId) {
   // 更新游戏阶段
   game.phase = GAME_PHASES.ROUND_END;
 
+  // 检查存活玩家（分数 > 0 且在线）
+  const activePlayers = room.players.filter((p) => p.isOnline && !p.isEliminated);
+  const alivePlayers = activePlayers.filter((p) => p.score > 0);
+
+  console.log(`[GameController] Alive players: ${alivePlayers.length}/${activePlayers.length}`);
+
+  // 判断游戏是否结束：只剩1名存活玩家
+  const gameEnded = alivePlayers.length <= 1;
+  const winner = gameEnded && alivePlayers.length === 1 ? alivePlayers[0] : null;
+
+  if (gameEnded) {
+    game.phase = GAME_PHASES.GAME_OVER;
+    console.log(`[GameController] Game ended! Winner: ${winner ? winner.nickname : 'None'}`);
+  }
+
   // 准备结算数据
   const roundSummary = {
     round: game.round,
     playerWords: game.playerWords,
     scoreChanges: scoreChanges,
     players: room.players.map((p) => p.toJSON()),
-    gameEnded: false, // 后续会检查
+    gameEnded: gameEnded,
+    winner: winner ? winner.toJSON() : null,
   };
 
   console.log(`[GameController] Round ${game.round} ended in room ${roomId}`);

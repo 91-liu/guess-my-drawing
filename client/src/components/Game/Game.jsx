@@ -7,6 +7,7 @@ import { Canvas } from './Canvas/Canvas';
 import { Timer } from './Timer';
 import { GuessingPhase } from './GuessingPhase';
 import { RoundSummary } from './RoundSummary';
+import { GameOver } from './GameOver/GameOver';
 
 export function Game() {
   const {
@@ -214,6 +215,9 @@ export function Game() {
 
       {/* 回合结算 */}
       {phase === 'round_end' && <RoundSummary />}
+
+      {/* 游戏结束 */}
+      {phase === 'game_over' && <GameOver />}
     </div>
   );
 
