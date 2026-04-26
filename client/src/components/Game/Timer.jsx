@@ -3,15 +3,27 @@
  */
 
 import { useRoomStore } from '../../store/useRoomStore';
+import { useEffect, useState } from 'react';
 
 export function Timer() {
   const timeLeft = useRoomStore((state) => state.timeLeft);
   const phase = useRoomStore((state) => state.phase);
+  const [prevTime, setPrevTime] = useState(timeLeft);
+  const [animate, setAnimate] = useState(false);
 
   // 如果不是绘画阶段，不显示
   if (phase !== 'drawing') {
     return null;
   }
+
+  // 触发数字跳动动画
+  useEffect(() => {
+    if (timeLeft !== prevTime) {
+      setAnimate(true);
+      setPrevTime(timeLeft);
+      setTimeout(() => setAnimate(false), 500);
+    }
+  }, [timeLeft, prevTime]);
 
   // 格式化时间
   const minutes = Math.floor(timeLeft / 60);
@@ -24,41 +36,24 @@ export function Timer() {
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        padding: '15px 30px',
-        backgroundColor: isUrgent ? '#ff4444' : isWarning ? '#ff9800' : '#4CAF50',
-        color: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        fontSize: '32px',
-        fontWeight: 'bold',
-        fontFamily: 'monospace',
-        zIndex: 1000,
-        animation: isWarning ? 'pulse 1s infinite' : 'none',
-        transition: 'all 0.3s ease',
-      }}
+      className={`
+        fixed top-5 right-5 px-8 py-4 rounded-lg shadow-lg z-50
+        ${isUrgent ? 'bg-red-500' : isWarning ? 'bg-orange-500' : 'bg-green-500'}
+        ${isWarning ? 'animate-pulse' : ''}
+        transition-all duration-300 ease-in-out
+      `}
     >
-      <div style={{ fontSize: '14px', marginBottom: '5px', opacity: 0.9 }}>
+      <div className="text-sm mb-1 opacity-90 text-white">
         剩余时间
       </div>
-      <div>{timeString}</div>
+      <div className={`text-4xl font-mono font-bold text-white ${animate ? 'animate-number-bounce' : ''}`}>
+        {timeString}
+      </div>
       {isWarning && (
-        <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>
+        <div className="text-xs mt-1 opacity-90 text-white">
           ⚠️ 时间即将结束！
         </div>
       )}
-
-      <style>
-        {`
-          @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-          }
-        `}
-      </style>
     </div>
   );
 }
