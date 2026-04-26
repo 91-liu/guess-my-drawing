@@ -21,8 +21,9 @@ export const useRoomStore = create((set, get) => ({
   wordPool: [],
   canvasPoints: [],
   round: 1,
-  timeLeft: 120, // 倒计时剩余秒数
-  phase: 'waiting', // 'waiting' | 'drawing' | 'guessing' | 'round_end'
+  timeLeft: 120,
+  phase: 'waiting',
+  playerDrawings: {}, // { playerId: [drawActions] }
 
   /**
    * 创建房间
@@ -235,6 +236,26 @@ export const useRoomStore = create((set, get) => ({
       if (data.toPhase === 'guessing') {
         console.log('[RoomStore] Entered guessing phase');
       }
+    });
+
+    // 监听绘画更新事件
+    socket.on(SOCKET_EVENTS.DRAW_UPDATE, (data) => {
+      const { playerDrawings } = get();
+
+      const { action, playerId } = data;
+
+      // 更新该玩家的画作
+      const existingActions = playerDrawings[playerId] || [];
+      const updatedActions = [...existingActions, action];
+
+      set({
+        playerDrawings: {
+          ...playerDrawings,
+          [playerId]: updatedActions,
+        },
+      });
+
+      console.log(`[RoomStore] Draw action received from player ${playerId}`);
     });
   },
 }));
