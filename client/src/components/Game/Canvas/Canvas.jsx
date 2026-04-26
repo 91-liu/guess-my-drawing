@@ -3,9 +3,9 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../../shared/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../../../../shared/constants.js';
 
-export function Canvas({ points, onPointClick, disabled = false }) {
+export function Canvas({ points, lines = [], onPointClick, disabled = false }) {
   const canvasRef = useRef(null);
   const [canvasSize, setCanvasSize] = useState({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -49,8 +49,12 @@ export function Canvas({ points, onPointClick, disabled = false }) {
     ctx.fillStyle = '#f5f5f5';
     ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
-    // 绘制网格（可选，用于调试）
-    // drawGrid(ctx, canvasSize.width, canvasSize.height);
+    // 绘制线条
+    if (lines && lines.length > 0) {
+      lines.forEach((line) => {
+        drawLine(ctx, line, scale);
+      });
+    }
 
     // 绘制所有点
     if (points && points.length > 0) {
@@ -58,7 +62,7 @@ export function Canvas({ points, onPointClick, disabled = false }) {
         drawPoint(ctx, point, scale, hoveredPoint);
       });
     }
-  }, [points, canvasSize, hoveredPoint]);
+  }, [points, lines, canvasSize, hoveredPoint]);
 
   // 处理鼠标移动
   const handleMouseMove = (e) => {
@@ -77,7 +81,7 @@ export function Canvas({ points, onPointClick, disabled = false }) {
       const px = point.x * scale;
       const py = point.y * scale;
       const distance = Math.sqrt(Math.pow(px - x, 2) + Math.pow(py - y, 2));
-      return distance <= 10; // 10px 范围内
+      return distance <= 10;
     });
 
     setHoveredPoint(hoveredPt || null);
@@ -123,7 +127,7 @@ export function Canvas({ points, onPointClick, disabled = false }) {
           cursor: disabled ? 'not-allowed' : hoveredPoint ? 'pointer' : 'default',
           backgroundColor: '#f5f5f5',
           maxWidth: '100%',
-          touchAction: 'none', // 防止移动端滚动干扰
+          touchAction: 'none',
         }}
       />
       {points && (
@@ -144,20 +148,19 @@ function drawPoint(ctx, point, scale, hoveredPoint) {
   const baseRadius = 5;
   const radius = baseRadius * scale;
 
-  // 点的样式
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
 
   // 根据状态设置颜色
   if (point.isLit) {
     // 点亮状态：亮色
-    ctx.fillStyle = '#FFD700'; // 金色
-    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#FFD700';
+    ctx.shadowBlur = 15;
     ctx.shadowColor = '#FFD700';
   } else if (hoveredPoint?.id === point.id) {
     // 悬停状态：高亮
-    ctx.fillStyle = '#4CAF50'; // 绿色
-    ctx.shadowBlur = 8;
+    ctx.fillStyle = '#4CAF50';
+    ctx.shadowBlur = 10;
     ctx.shadowColor = '#4CAF50';
   } else {
     // 默认状态：灰色
@@ -166,39 +169,30 @@ function drawPoint(ctx, point, scale, hoveredPoint) {
   }
 
   ctx.fill();
-  ctx.shadowBlur = 0; // 重置阴影
+  ctx.shadowBlur = 0;
 
   // 绘制点边框
   ctx.strokeStyle = point.isLit ? '#FFA500' : '#666';
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 2;
   ctx.stroke();
-
-  // 绘制点 ID（可选，用于调试）
-  // ctx.fillStyle = '#333';
-  // ctx.font = '10px Arial';
-  // ctx.textAlign = 'center';
-  // ctx.fillText(point.id.slice(0, 4), x, y - radius - 5);
 }
 
 /**
- * 绘制网格（调试用）
+ * 绘制线条
  */
-function drawGrid(ctx, width, height) {
-  const gridSize = 50;
-  ctx.strokeStyle = '#e0e0e0';
-  ctx.lineWidth = 0.5;
+function drawLine(ctx, line, scale) {
+  const startX = line.startPoint.x * scale;
+  const startY = line.startPoint.y * scale;
+  const endX = line.endPoint.x * scale;
+  const endY = line.endPoint.y * scale;
 
-  for (let x = 0; x <= width; x += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.stroke();
-  }
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(endX, endY);
 
-  for (let y = 0; y <= height; y += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
-  }
+  // 线条样式
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 3 * scale;
+  ctx.lineCap = 'round';
+  ctx.stroke();
 }

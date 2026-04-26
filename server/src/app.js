@@ -8,6 +8,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { SERVER_PORT } from '../../shared/constants.js';
 import { registerRoomHandlers } from './socket/roomHandlers.js';
+import { registerGameHandlers } from './socket/gameHandlers.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -35,6 +36,9 @@ io.on('connection', (socket) => {
 
   // 注册房间事件处理器
   registerRoomHandlers(io, socket);
+
+  // 注册游戏事件处理器
+  registerGameHandlers(io, socket);
 
   // 测试事件
   socket.on('test_event', (data) => {
