@@ -1,0 +1,35 @@
+{
+  "name": "guess-my-drawing",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "在线多人绘画猜词游戏 - 支持点线绘图和实时互动",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=client\" \"npm run server --workspace=server\"",
+    "server": "npm run server --workspace=server",
+    "client": "npm run dev --workspace=client",
+    "install:all": "npm install",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "format": "prettier --write \"**/*.{js,jsx,json,md}\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.2.5"
+  },
+  "keywords": [
+    "game",
+    "drawing",
+    "guessing",
+    "multiplayer",
+    "websocket",
+    "react",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT"
+}
