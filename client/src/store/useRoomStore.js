@@ -147,23 +147,40 @@ export const useRoomStore = create((set, get) => ({
     socket.on(SOCKET_EVENTS.PLAYER_LEFT, (data) => {
       const { room, playerId } = get();
       if (room) {
-        const updatedPlayers = room.players.filter((p) => p.id !== data.playerId);
+        // 如果是离线事件（断线），只更新在线状态
+        if (data.isOffline) {
+          const updatedPlayers = room.players.map((p) =>
+            p.id === data.playerId ? { ...p, isOnline: false } : p
+          );
 
-        // 如果房主变更，更新房主状态
-        const updatedPlayersWithNewHost = updatedPlayers.map((p) => ({
-          ...p,
-          isHost: p.id === data.newHostId,
-        }));
+          set({
+            room: {
+              ...room,
+              players: updatedPlayers,
+            },
+          });
 
-        set({
-          room: {
-            ...room,
-            players: updatedPlayersWithNewHost,
-            hostId: data.newHostId,
-          },
-        });
+          console.log(`[RoomStore] Player went offline: ${data.playerName || data.playerId}`);
+        } else {
+          // 如果是主动离开，从列表中移除
+          const updatedPlayers = room.players.filter((p) => p.id !== data.playerId);
 
-        console.log(`[RoomStore] Player left: ${data.playerId}`);
+          // 如果房主变更，更新房主状态
+          const updatedPlayersWithNewHost = updatedPlayers.map((p) => ({
+            ...p,
+            isHost: p.id === data.newHostId,
+          }));
+
+          set({
+            room: {
+              ...room,
+              players: updatedPlayersWithNewHost,
+              hostId: data.newHostId || room.hostId,
+            },
+          });
+
+          console.log(`[RoomStore] Player left: ${data.playerId}`);
+        }
       }
     });
   },

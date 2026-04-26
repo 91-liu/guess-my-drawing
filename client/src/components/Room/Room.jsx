@@ -101,7 +101,7 @@ export function Room() {
 
       {/* 玩家列表 */}
       <div className="players-list" style={{ marginBottom: '30px' }}>
-        <h2 style={{ marginBottom: '15px' }}>玩家列表</h2>
+        <h2 style={{ marginBottom: '15px' }}>玩家列表 ({room.players.filter(p => p.isOnline).length} 在线)</h2>
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {room.players.map((player) => (
             <li
@@ -112,13 +112,25 @@ export function Room() {
                 marginBottom: '5px',
                 borderRadius: '4px',
                 backgroundColor: player.id === playerId ? '#f0f8ff' : '#fff',
+                opacity: player.isOnline ? 1 : 0.5,
               }}
             >
               <span style={{ fontWeight: player.isHost ? 'bold' : 'normal' }}>
                 {player.nickname}
                 {player.isHost && ' 👑 (房主)'}
+                {!player.isOnline && ' (离线)'}
               </span>
               {player.id === playerId && <span> (你)</span>}
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: player.isOnline ? 'green' : 'red',
+                  marginLeft: '10px',
+                }}
+              />
             </li>
           ))}
         </ul>

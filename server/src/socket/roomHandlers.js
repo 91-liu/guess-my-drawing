@@ -4,6 +4,7 @@
 
 import * as roomController from '../controllers/roomController.js';
 import { SOCKET_EVENTS } from '../../shared/constants.js';
+import { sessionManager } from '../utils/sessionManager.js';
 
 /**
  * 注册房间相关 Socket 事件
@@ -26,6 +27,9 @@ export function registerRoomHandlers(io, socket) {
       if (player) {
         player.socketId = socket.id;
       }
+
+      // 注册会话
+      sessionManager.registerSession(socket.id, result.roomId, result.playerId);
 
       // 加入 Socket.io 房间
       socket.join(result.roomId);
@@ -61,6 +65,9 @@ export function registerRoomHandlers(io, socket) {
         player.socketId = socket.id;
       }
 
+      // 注册会话
+      sessionManager.registerSession(socket.id, result.roomId, result.playerId);
+
       // 加入 Socket.io 房间
       socket.join(result.roomId);
 
@@ -92,6 +99,9 @@ export function registerRoomHandlers(io, socket) {
       console.log(`[Socket] Leave room request from socket ${socket.id}`);
 
       const result = roomController.leaveRoom(data.roomId, data.playerId);
+
+      // 移除会话
+      sessionManager.removeSession(socket.id);
 
       // 离开 Socket.io 房间
       socket.leave(result.roomId);
@@ -149,7 +159,40 @@ export function registerRoomHandlers(io, socket) {
   socket.on(SOCKET_EVENTS.DISCONNECT, () => {
     console.log(`[Socket] Player disconnected: ${socket.id}`);
 
-    // TODO: 查找该 socket 对应的玩家，并标记为离线
-    // 暂时不自动移除，等待重连机制实现
+    // 获取会话信息
+    const session = sessionManager.getSession(socket.id);
+
+    if (!session) {
+      console.log(`[Socket] No session found for socket ${socket.id}`);
+      return;
+    }
+
+    const { roomId, playerId } = session;
+
+    try {
+      // 标记玩家为离线
+      const room = roomController.getAllRooms().get(roomId);
+      if (room) {
+        const player = room.getPlayer(playerId);
+        if (player) {
+          player.setOffline();
+          console.log(`[Socket] Player ${player.nickname} marked as offline`);
+
+          // 通知房间内其他玩家
+          io.to(roomId).emit(SOCKET_EVENTS.PLAYER_LEFT, {
+            playerId: playerId,
+            playerName: player.nickname,
+            isOffline: true,
+          });
+        }
+      }
+
+      // 移除会话
+      sessionManager.removeSession(socket.id);
+
+      console.log(`[Socket] Disconnect handled for socket ${socket.id}`);
+    } catch (error) {
+      console.error('[Socket] Disconnect handling error:', error.message);
+    }
   });
 }
