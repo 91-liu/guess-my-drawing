@@ -1,5 +1,5 @@
 /**
- * 画布组件 - 使用 HTML5 Canvas 渲染点和线
+ * 画布组件 - 使用 HTML5 Canvas 渲染点和线，带动画效果
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -9,6 +9,7 @@ export function Canvas({ points, lines = [], onPointClick, disabled = false }) {
   const canvasRef = useRef(null);
   const [canvasSize, setCanvasSize] = useState({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [animationLines, setAnimationLines] = useState([]);
 
   // 响应式调整画布大小
   useEffect(() => {
@@ -34,6 +35,31 @@ export function Canvas({ points, lines = [], onPointClick, disabled = false }) {
     };
   }, []);
 
+  // 线条渐进动画
+  useEffect(() => {
+    if (lines && lines.length > 0) {
+      // 新线条添加时触发动画
+      const newLines = lines.slice(animationLines.length);
+      if (newLines.length > 0) {
+        // 添加动画标记
+        const animatedNewLines = newLines.map((line, index) => ({
+          ...line,
+          animating: true,
+          animationProgress: 0,
+        }));
+
+        setAnimationLines([...animationLines, ...animatedNewLines]);
+
+        // 动画结束后移除标记
+        setTimeout(() => {
+          setAnimationLines(lines.map((line) => ({ ...line, animating: false })));
+        }, 800);
+      }
+    } else {
+      setAnimationLines([]);
+    }
+  }, [lines]);
+
   // 渲染画布
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -45,24 +71,24 @@ export function Canvas({ points, lines = [], onPointClick, disabled = false }) {
     // 清空画布
     ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
 
-    // 绘制背景
+    // 绘制��景
     ctx.fillStyle = '#f5f5f5';
     ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
-    // 绘制线条
-    if (lines && lines.length > 0) {
-      lines.forEach((line) => {
+    // 绘制线条（带动画）
+    if (animationLines && animationLines.length > 0) {
+      animationLines.forEach((line) => {
         drawLine(ctx, line, scale);
       });
     }
 
-    // 绘制所有点
+    // 绘制所有点（带闪烁效果）
     if (points && points.length > 0) {
       points.forEach((point) => {
         drawPoint(ctx, point, scale, hoveredPoint);
       });
     }
-  }, [points, lines, canvasSize, hoveredPoint]);
+  }, [points, animationLines, canvasSize, hoveredPoint]);
 
   // 处理鼠标移动
   const handleMouseMove = (e) => {
@@ -113,7 +139,7 @@ export function Canvas({ points, lines = [], onPointClick, disabled = false }) {
   };
 
   return (
-    <div style={{ textAlign: 'center', margin: '20px 0' }}>
+    <div className="text-center my-5 animate-fade-in">
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
@@ -121,17 +147,17 @@ export function Canvas({ points, lines = [], onPointClick, disabled = false }) {
         onClick={handleClick}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoveredPoint(null)}
-        style={{
-          border: '2px solid #ddd',
-          borderRadius: '8px',
-          cursor: disabled ? 'not-allowed' : hoveredPoint ? 'pointer' : 'default',
-          backgroundColor: '#f5f5f5',
-          maxWidth: '100%',
-          touchAction: 'none',
-        }}
+        className={`
+          border-2 border-gray-300 rounded-lg
+          ${disabled ? 'cursor-not-allowed opacity-60' : hoveredPoint ? 'cursor-pointer' : 'cursor-default'}
+          bg-gray-100 max-w-full
+          hover:border-blue-400 transition-colors duration-200
+          shadow-lg hover:shadow-xl
+        `}
+        style={{ touchAction: 'none' }}
       />
       {points && (
-        <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
+        <div className="mt-2 text-sm text-gray-600">
           共 {points.length} 个点 | 点击选择点
         </div>
       )}
@@ -140,7 +166,7 @@ export function Canvas({ points, lines = [], onPointClick, disabled = false }) {
 }
 
 /**
- * 绘制单个点
+ * 绘制单个点（带闪烁效果）
  */
 function drawPoint(ctx, point, scale, hoveredPoint) {
   const x = point.x * scale;
@@ -151,17 +177,17 @@ function drawPoint(ctx, point, scale, hoveredPoint) {
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
 
-  // 根据状态设置颜色
+  // 根据状态设置颜色和效果
   if (point.isLit) {
-    // 点亮状态：亮色
+    // 点亮状态：亮色闪烁
     ctx.fillStyle = '#FFD700';
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = '#FFD700';
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
   } else if (hoveredPoint?.id === point.id) {
     // 悬停状态：高亮
     ctx.fillStyle = '#4CAF50';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#4CAF50';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = 'rgba(76, 175, 80, 0.8)';
   } else {
     // 默认状态：灰色
     ctx.fillStyle = '#999';
@@ -178,7 +204,7 @@ function drawPoint(ctx, point, scale, hoveredPoint) {
 }
 
 /**
- * 绘制线条
+ * 绘制线条（带渐进动画）
  */
 function drawLine(ctx, line, scale) {
   const startX = line.startPoint.x * scale;
@@ -186,13 +212,33 @@ function drawLine(ctx, line, scale) {
   const endX = line.endPoint.x * scale;
   const endY = line.endPoint.y * scale;
 
-  ctx.beginPath();
-  ctx.moveTo(startX, startY);
-  ctx.lineTo(endX, endY);
+  // 如果是动画中的线条，使用渐进绘制
+  if (line.animating) {
+    const progress = line.animationProgress || 1;
+    const currentEndX = startX + (endX - startX) * progress;
+    const currentEndY = startY + (endY - startY) * progress;
 
-  // 线条样式
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 3 * scale;
-  ctx.lineCap = 'round';
-  ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(currentEndX, currentEndY);
+
+    // 渐进线条样式（更亮）
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 3 * scale;
+    ctx.lineCap = 'round';
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  } else {
+    // 静态线条
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 3 * scale;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
 }
