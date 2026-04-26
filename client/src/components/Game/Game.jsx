@@ -5,6 +5,7 @@
 import { useEffect } from 'react';
 import { useRoomStore } from '../../store/useRoomStore';
 import { Canvas } from './Canvas/Canvas';
+import { Timer } from './Timer';
 
 export function Game() {
   const {
@@ -16,6 +17,7 @@ export function Game() {
     wordPool,
     canvasPoints,
     round,
+    phase,
   } = useRoomStore();
 
   // 如果游戏未开始，不渲染
@@ -28,6 +30,9 @@ export function Game() {
 
   return (
     <div className="game" style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
+      {/* 计时器 */}
+      <Timer />
+
       {/* 游戏信息 */}
       <div
         style={{

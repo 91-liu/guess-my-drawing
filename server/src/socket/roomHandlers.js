@@ -187,6 +187,9 @@ export function registerRoomHandlers(io, socket) {
 
       console.log(`[Socket] Game started in room ${data.roomId}`);
 
+      // 启动绘画阶段计时器
+      gameController.startDrawingTimer(data.roomId, io);
+
       if (callback) {
         callback({
           success: true,

@@ -6,10 +6,14 @@ import { Game } from '../models/Game.js';
 import * as roomController from './roomController.js';
 import { generateWords, assignWordsToPlayers, createWordPool } from '../services/wordGenerator.js';
 import { generateCanvasPoints } from '../services/canvasGenerator.js';
+import { GameTimer } from '../utils/timer.js';
 import { MIN_PLAYERS, MAX_PLAYERS, GAME_PHASES } from '../../shared/constants.js';
 
 // 存储所有游戏实例
 const games = new Map();
+
+// 存储所有计时器实例
+const timers = new Map();
 
 /**
  * 启动游戏
@@ -107,5 +111,78 @@ export function endGame(roomId) {
   if (game) {
     games.delete(roomId.toUpperCase());
     console.log(`[GameController] Game ended in room ${roomId}`);
+  }
+
+  // 停止计时器
+  const timer = timers.get(roomId.toUpperCase());
+  if (timer) {
+    timer.stop();
+    timers.delete(roomId.toUpperCase());
+  }
+}
+
+/**
+ * 启动绘画阶段计时器
+ * @param {string} roomId - 房间ID
+ * @param {Object} io - Socket.io 服务器实例
+ */
+export function startDrawingTimer(roomId, io) {
+  const game = getGame(roomId);
+  if (!game) {
+    throw new Error('游戏不存在');
+  }
+
+  // 创建计时器
+  const timer = new GameTimer({
+    onTick: (timeLeft) => {
+      // 广播剩余时间
+      io.to(roomId.toUpperCase()).emit('time_update', {
+        timeLeft: timeLeft,
+        phase: 'drawing',
+      });
+
+      // 时间警告（最后10秒）
+      if (timeLeft <= 10) {
+        io.to(roomId.toUpperCase()).emit('time_warning', {
+          timeLeft: timeLeft,
+        });
+      }
+
+      game.timeLeft = timeLeft;
+    },
+    onComplete: () => {
+      console.log(`[GameController] Drawing phase completed in room ${roomId}`);
+
+      // 广播阶段切换事件
+      io.to(roomId.toUpperCase()).emit('phase_change', {
+        fromPhase: 'drawing',
+        toPhase: 'guessing',
+        round: game.round,
+      });
+
+      // 更新游戏状态
+      game.phase = GAME_PHASES.GUESSING;
+    },
+  });
+
+  // 存储计时器
+  timers.set(roomId.toUpperCase(), timer);
+
+  // 启动计时器
+  timer.start();
+
+  console.log(`[GameController] Drawing timer started for room ${roomId}`);
+}
+
+/**
+ * 停止计时器
+ * @param {string} roomId - 房间ID
+ */
+export function stopTimer(roomId) {
+  const timer = timers.get(roomId.toUpperCase());
+  if (timer) {
+    timer.stop();
+    timers.delete(roomId.toUpperCase());
+    console.log(`[GameController] Timer stopped for room ${roomId}`);
   }
 }

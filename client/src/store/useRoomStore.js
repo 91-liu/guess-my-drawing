@@ -21,6 +21,8 @@ export const useRoomStore = create((set, get) => ({
   wordPool: [],
   canvasPoints: [],
   round: 1,
+  timeLeft: 120, // 倒计时剩余秒数
+  phase: 'waiting', // 'waiting' | 'drawing' | 'guessing' | 'round_end'
 
   /**
    * 创建房间
@@ -206,6 +208,33 @@ export const useRoomStore = create((set, get) => ({
       console.log(`[RoomStore] Secret word: ${data.secretWord}`);
       console.log(`[RoomStore] Word pool: ${data.wordPool.length} words`);
       console.log(`[RoomStore] Canvas points: ${data.canvasPoints.length} points`);
+    });
+
+    // 监听时间更新事件
+    socket.on(SOCKET_EVENTS.TIME_UPDATE, (data) => {
+      set({
+        timeLeft: data.timeLeft,
+        phase: data.phase,
+      });
+    });
+
+    // 监听时间警告事件
+    socket.on(SOCKET_EVENTS.TIME_WARNING, (data) => {
+      console.log(`[RoomStore] Time warning: ${data.timeLeft}s left`);
+    });
+
+    // 监听阶段切换事件
+    socket.on(SOCKET_EVENTS.PHASE_CHANGE, (data) => {
+      console.log(`[RoomStore] Phase changed: ${data.fromPhase} -> ${data.toPhase}`);
+
+      set({
+        phase: data.toPhase,
+        round: data.round,
+      });
+
+      if (data.toPhase === 'guessing') {
+        console.log('[RoomStore] Entered guessing phase');
+      }
     });
   },
 }));
