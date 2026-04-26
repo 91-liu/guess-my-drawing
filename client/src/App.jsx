@@ -5,6 +5,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Lobby } from './components/Lobby/Lobby';
 import { Room } from './components/Room/Room';
+import { Game } from './components/Game/Game';
 import { socketService } from './services/socket.js';
 import { useEffect } from 'react';
 
@@ -18,9 +19,22 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Lobby />} />
-        <Route path="/room/:roomId" element={<Room />} />
+        <Route path="/room/:roomId" element={<RoomWithGame />} />
       </Routes>
     </Router>
+  );
+}
+
+// Room 页面包装器 - 在游戏开始时显示 Game 组件
+function RoomWithGame() {
+  const { useRoomStore } = require('./store/useRoomStore.js');
+  const gameStarted = useRoomStore((state) => state.gameStarted);
+
+  return (
+    <>
+      <Room />
+      {gameStarted && <Game />}
+    </>
   );
 }
 
