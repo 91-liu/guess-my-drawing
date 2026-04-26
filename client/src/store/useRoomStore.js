@@ -297,5 +297,25 @@ export const useRoomStore = create((set, get) => ({
       console.log('[RoomStore] Round summary received');
       console.log('[RoomStore] Score changes:', data.scoreChanges);
     });
+
+    // 监听新一轮开始事件
+    socket.on(SOCKET_EVENTS.ROUND_STARTED, (data) => {
+      console.log(`[RoomStore] Round ${data.round} started`);
+
+      set({
+        phase: 'drawing',
+        round: data.round,
+        secretWord: data.playerWords[get().playerId],
+        wordPool: data.wordPool,
+        canvasPoints: data.canvasPoints,
+        playerDrawings: {},
+        roundSummary: null,
+        timeLeft: 120,
+      });
+
+      console.log(`[RoomStore] New secret word: ${data.playerWords[get().playerId]}`);
+      console.log(`[RoomStore] New word pool: ${data.wordPool.length} words`);
+      console.log(`[RoomStore] New canvas points: ${data.canvasPoints.length} points`);
+    });
   },
 }));

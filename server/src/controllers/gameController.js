@@ -318,3 +318,78 @@ export function endRound(roomId) {
 
   return roundSummary;
 }
+
+/**
+ * 启动下一轮游戏
+ * @param {string} roomId - 房间ID
+ * @returns {Object} 新一轮的游戏数据
+ */
+export function nextRound(roomId) {
+  const game = getGame(roomId);
+  if (!game) {
+    throw new Error('游戏不存在');
+  }
+
+  // 获取房间
+  const room = roomController.getAllRooms().get(roomId.toUpperCase());
+  if (!room) {
+    throw new Error('房间不存在');
+  }
+
+  // 检查游戏是否已结束
+  if (game.phase === GAME_PHASES.GAME_OVER) {
+    throw new Error('游戏已结束，无法开始下一轮');
+  }
+
+  // 获取存活玩家（分数 > 0 且在线）
+  const alivePlayers = room.players.filter((p) => p.isOnline && !p.isEliminated && p.score > 0);
+
+  // 检查存活玩家数量
+  if (alivePlayers.length < MIN_PLAYERS) {
+    throw new Error(`存活玩家不足${MIN_PLAYERS}人，无法继续游戏`);
+  }
+
+  console.log(`[GameController] Starting next round in room ${roomId}`);
+  console.log(`[GameController] Alive players: ${alivePlayers.map((p) => p.nickname).join(', ')}`);
+
+  // 增加轮次计数
+  game.round += 1;
+  game.phase = GAME_PHASES.DRAWING;
+  game.roundStartTime = new Date().toISOString();
+
+  // 清空上一轮的绘画动作和移除的词汇
+  game.removedWords = [];
+  alivePlayers.forEach((player) => {
+    player.clearDrawActions();
+  });
+
+  // 生成新的词汇
+  const words = generateWords(alivePlayers.length);
+  const playerIds = alivePlayers.map((p) => p.id);
+  const playerWordAssignments = assignWordsToPlayers(words, playerIds);
+
+  // 重新分配秘密词汇给存活玩家
+  alivePlayers.forEach((player) => {
+    player.assignSecretWord(playerWordAssignments[player.id]);
+  });
+
+  // 更新游戏的词汇池和玩家词汇映射
+  const wordPool = createWordPool(words);
+  game.setupWords(wordPool, playerWordAssignments);
+
+  // 生成新的画布点
+  const canvasPoints = generateCanvasPoints();
+  game.setupCanvas(canvasPoints);
+
+  console.log(`[GameController] Round ${game.round} started in room ${roomId}`);
+  console.log(`[GameController] New words generated: ${words.length}`);
+  console.log(`[GameController] New canvas points: ${canvasPoints.length}`);
+
+  return {
+    game: game.toJSON(),
+    playerWords: playerWordAssignments,
+    canvasPoints: canvasPoints,
+    wordPool: wordPool.filter((w) => !w.removed),
+    round: game.round,
+  };
+}

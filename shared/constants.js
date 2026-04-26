@@ -38,6 +38,8 @@ export const SOCKET_EVENTS = {
   START_GAME: 'start_game',
   GAME_STARTED: 'game_started',
   PHASE_CHANGE: 'phase_change',
+  NEXT_ROUND: 'next_round',
+  ROUND_STARTED: 'round_started',
 
   // 绘画相关
   DRAW_ACTION: 'draw_action',

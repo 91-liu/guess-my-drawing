@@ -126,4 +126,38 @@ export function registerGameHandlers(io, socket) {
       }
     }
   });
+
+  /**
+   * 开始下一轮事件
+   */
+  socket.on(SOCKET_EVENTS.NEXT_ROUND, (data, callback) => {
+    try {
+      console.log(`[Socket] Next round from socket ${socket.id}`);
+
+      const { roomId } = data;
+
+      // 启动下一轮
+      const nextRoundData = gameController.nextRound(roomId);
+
+      // 广播新一轮开始事件给所有玩家
+      io.to(roomId.toUpperCase()).emit(SOCKET_EVENTS.ROUND_STARTED, nextRoundData);
+
+      console.log(`[Socket] Round ${nextRoundData.round} started in room ${roomId}`);
+
+      if (callback) {
+        callback({
+          success: true,
+          data: nextRoundData,
+        });
+      }
+    } catch (error) {
+      console.error('[Socket] Next round error:', error.message);
+      if (callback) {
+        callback({
+          success: false,
+          error: error.message,
+        });
+      }
+    }
+  });
 }
