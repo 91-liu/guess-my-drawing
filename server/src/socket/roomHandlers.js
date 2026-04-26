@@ -234,23 +234,114 @@ export function registerRoomHandlers(io, socket) {
         const player = room.getPlayer(playerId);
         if (player) {
           player.setOffline();
-          console.log(`[Socket] Player ${player.nickname} marked as offline`);
+
+          // 生成重连令牌
+          const reconnectToken = sessionManager.markPlayerOffline(playerId, roomId);
+
+          console.log(`[Socket] Player ${player.nickname} marked as offline, reconnect token: ${reconnectToken}`);
 
           // 通知房间内其他玩家
           io.to(roomId).emit(SOCKET_EVENTS.PLAYER_LEFT, {
             playerId: playerId,
             playerName: player.nickname,
             isOffline: true,
+            reconnectToken: reconnectToken,
           });
         }
       }
 
-      // 移除会话
+      // 移除会话（但保留离线记录，等待重连或超时）
       sessionManager.removeSession(socket.id);
 
       console.log(`[Socket] Disconnect handled for socket ${socket.id}`);
     } catch (error) {
       console.error('[Socket] Disconnect handling error:', error.message);
+    }
+  });
+
+  /**
+   * 重连事件
+   */
+  socket.on(SOCKET_EVENTS.RECONNECT, (data, callback) => {
+    try {
+      console.log(`[Socket] Reconnect request from socket ${socket.id}`);
+
+      const { reconnectToken } = data;
+
+      // 尝试重连
+      const reconnectInfo = sessionManager.attemptReconnect(reconnectToken);
+
+      if (!reconnectInfo) {
+        console.log(`[Socket] Reconnect failed: invalid token or timeout`);
+        callback({
+          success: false,
+          error: '重连失败：令牌无效或已超时',
+        });
+        return;
+      }
+
+      const { playerId, roomId } = reconnectInfo;
+
+      // 获取房间和玩家
+      const room = roomController.getAllRooms().get(roomId);
+      if (!room) {
+        throw new Error('房间不存在');
+      }
+
+      const player = room.getPlayer(playerId);
+      if (!player) {
+        throw new Error('玩家不存在');
+      }
+
+      // 恢复玩家状态
+      player.setOnline();
+      player.socketId = socket.id;
+
+      // 注册新会话
+      sessionManager.registerSession(socket.id, roomId, playerId);
+
+      // 加入 Socket.io 房间
+      socket.join(roomId);
+
+      // 通知房间内其他玩家
+      socket.to(roomId).emit(SOCKET_EVENTS.PLAYER_JOINED, {
+        player: player.toJSON(),
+        isReconnect: true,
+      });
+
+      console.log(`[Socket] Player ${player.nickname} reconnected to room ${roomId}`);
+
+      // 获取当前游戏状态（如果正在游戏）
+      let gameState = null;
+      const game = gameController.getGame(roomId);
+      if (game) {
+        gameState = {
+          gameStarted: true,
+          phase: game.phase,
+          round: game.round,
+          secretWord: game.playerWords[playerId],
+          wordPool: game.wordPool.filter((w) => !w.removed),
+          canvasPoints: game.canvasPoints,
+          timeLeft: game.timeLeft,
+        };
+      }
+
+      callback({
+        success: true,
+        data: {
+          roomId,
+          playerId,
+          player: player.toJSON(),
+          room: room.toJSON(),
+          gameState,
+        },
+      });
+    } catch (error) {
+      console.error('[Socket] Reconnect error:', error.message);
+      callback({
+        success: false,
+        error: error.message,
+      });
     }
   });
 }

@@ -24,6 +24,8 @@ export const SOCKET_EVENTS = {
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
   RECONNECT: 'reconnect',
+  RECONNECT_SUCCESS: 'reconnect_success',
+  RECONNECT_FAILED: 'reconnect_failed',
 
   // 房间相关
   CREATE_ROOM: 'create_room',
