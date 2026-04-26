@@ -7,6 +7,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { SERVER_PORT } from '../../shared/constants.js';
+import { registerRoomHandlers } from './socket/roomHandlers.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -32,14 +33,13 @@ app.get('/api/health', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`[Socket] Player connected: ${socket.id}`);
 
+  // 注册房间事件处理器
+  registerRoomHandlers(io, socket);
+
   // 测试事件
   socket.on('test_event', (data) => {
     console.log('[Socket] Test event received:', data);
     socket.emit('test_response', { message: 'Server received your message', data });
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`[Socket] Player disconnected: ${socket.id}`);
   });
 });
 
