@@ -100,11 +100,20 @@ export function registerGameHandlers(io, socket) {
     try {
       console.log(`[Socket] End turn from socket ${socket.id}`);
 
-      // TODO: 实现结束回合逻辑
+      const { roomId } = data;
+
+      // 结束回合
+      const roundSummary = gameController.endRound(roomId);
+
+      // 广播回合结算事件给所有玩家
+      io.to(roomId.toUpperCase()).emit(SOCKET_EVENTS.ROUND_SUMMARY, roundSummary);
+
+      console.log(`[Socket] Round ${roundSummary.round} ended in room ${roomId}`);
 
       if (callback) {
         callback({
           success: true,
+          data: roundSummary,
         });
       }
     } catch (error) {

@@ -6,6 +6,7 @@ import { useRoomStore } from '../../store/useRoomStore';
 import { Canvas } from './Canvas/Canvas';
 import { Timer } from './Timer';
 import { GuessingPhase } from './GuessingPhase';
+import { RoundSummary } from './RoundSummary';
 
 export function Game() {
   const {
@@ -210,6 +211,9 @@ export function Game() {
 
       {/* 猜词阶段 */}
       {phase === 'guessing' && <GuessingPhase />}
+
+      {/* 回合结算 */}
+      {phase === 'round_end' && <RoundSummary />}
     </div>
   );
 

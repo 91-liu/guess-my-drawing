@@ -24,6 +24,7 @@ export const useRoomStore = create((set, get) => ({
   timeLeft: 120,
   phase: 'waiting',
   playerDrawings: {}, // { playerId: [drawActions] }
+  roundSummary: null, // 回合结算数据
 
   /**
    * 创建房间
@@ -282,6 +283,19 @@ export const useRoomStore = create((set, get) => ({
       if (data.isHit) {
         console.log('[RoomStore] A player was hit!');
       }
+    });
+
+    // 监听回合结算事件
+    socket.on(SOCKET_EVENTS.ROUND_SUMMARY, (data) => {
+      console.log(`[RoomStore] Round ${data.round} ended`);
+
+      set({
+        phase: 'round_end',
+        roundSummary: data,
+      });
+
+      console.log('[RoomStore] Round summary received');
+      console.log('[RoomStore] Score changes:', data.scoreChanges);
     });
   },
 }));

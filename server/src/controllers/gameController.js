@@ -248,3 +248,57 @@ export function submitGuess(roomId, playerId, wordId, word) {
     isHit: hitPlayerId !== null,
   };
 }
+
+/**
+ * 结束回合
+ * @param {string} roomId - 房间ID
+ * @returns {Object} 回合结算数据
+ */
+export function endRound(roomId) {
+  const game = getGame(roomId);
+  if (!game) {
+    throw new Error('游戏不存在');
+  }
+
+  // 检查游戏阶段
+  if (game.phase !== GAME_PHASES.GUESSING) {
+    throw new Error('当前不是猜词阶段');
+  }
+
+  // 获取房间
+  const room = roomController.getAllRooms().get(roomId.toUpperCase());
+  if (!room) {
+    throw new Error('房间不存在');
+  }
+
+  // 计算本轮得分变化
+  const scoreChanges = {};
+  room.players.forEach((player) => {
+    const previousScore = player.score;
+    // 计算本轮被扣了多少分（秘密词汇被猜中的次数）
+    const hitCount = game.removedWords.filter((wordId) => {
+      const wordObj = game.wordPool.find((w) => w.id === wordId);
+      return wordObj && game.playerWords[player.id] === wordObj.word;
+    }).length;
+
+    if (hitCount > 0) {
+      scoreChanges[player.id] = -hitCount;
+    }
+  });
+
+  // 更新游戏阶段
+  game.phase = GAME_PHASES.ROUND_END;
+
+  // 准备结算数据
+  const roundSummary = {
+    round: game.round,
+    playerWords: game.playerWords,
+    scoreChanges: scoreChanges,
+    players: room.players.map((p) => p.toJSON()),
+    gameEnded: false, // 后续会检查
+  };
+
+  console.log(`[GameController] Round ${game.round} ended in room ${roomId}`);
+
+  return roundSummary;
+}
