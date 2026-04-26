@@ -3,7 +3,7 @@
  */
 
 import { Room } from '../models/Room.js';
-import { validateNickname, validateRoomId } from '../../shared/validators.js';
+import { validateNickname, validateRoomId } from '../../../shared/validators.js';
 
 // 存储所有房间（内存存储，后续可改为数据库）
 const rooms = new Map();

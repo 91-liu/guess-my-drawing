@@ -3,7 +3,7 @@
  */
 
 import * as gameController from '../controllers/gameController.js';
-import { SOCKET_EVENTS } from '../../shared/constants.js';
+import { SOCKET_EVENTS } from '../../../shared/constants.js';
 
 /**
  * 注册游戏相关 Socket 事件

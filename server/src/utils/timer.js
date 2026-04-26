@@ -2,7 +2,7 @@
  * 计时器服务
  */
 
-import { DRAWING_TIME_LIMIT } from '../../shared/constants.js';
+import { DRAWING_TIME_LIMIT } from '../../../shared/constants.js';
 
 export class GameTimer {
   /**

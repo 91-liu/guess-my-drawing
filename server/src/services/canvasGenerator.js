@@ -3,7 +3,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, POINT_COUNT_MIN, POINT_COUNT_MAX, POINT_MIN_DISTANCE } from '../../shared/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, POINT_COUNT_MIN, POINT_COUNT_MAX, POINT_MIN_DISTANCE } from '../../../shared/constants.js';
 
 /**
  * 生成画布上的随机点

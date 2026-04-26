@@ -7,7 +7,7 @@ import * as roomController from './roomController.js';
 import { generateWords, assignWordsToPlayers, createWordPool } from '../services/wordGenerator.js';
 import { generateCanvasPoints } from '../services/canvasGenerator.js';
 import { GameTimer } from '../utils/timer.js';
-import { MIN_PLAYERS, MAX_PLAYERS, GAME_PHASES } from '../../shared/constants.js';
+import { MIN_PLAYERS, MAX_PLAYERS, GAME_PHASES } from '../../../shared/constants.js';
 
 // 存储所有游戏实例
 const games = new Map();

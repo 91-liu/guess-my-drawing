@@ -2,7 +2,7 @@
  * Game 数据模型
  */
 
-import { GAME_PHASES, DRAWING_TIME_LIMIT } from '../../shared/constants.js';
+import { GAME_PHASES, DRAWING_TIME_LIMIT } from '../../../shared/constants.js';
 
 export class Game {
   /**

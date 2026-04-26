@@ -4,7 +4,7 @@
 
 import * as roomController from '../controllers/roomController.js';
 import * as gameController from '../controllers/gameController.js';
-import { SOCKET_EVENTS } from '../../shared/constants.js';
+import { SOCKET_EVENTS } from '../../../shared/constants.js';
 import { sessionManager } from '../utils/sessionManager.js';
 
 /**
