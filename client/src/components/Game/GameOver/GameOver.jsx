@@ -2,7 +2,6 @@
  * 游戏结束组件 - 显示获胜者和最终积分榜
  */
 
-import { useEffect } from 'react';
 import { useRoomStore } from '../../store/useRoomStore';
 
 export function GameOver() {
@@ -20,76 +19,50 @@ export function GameOver() {
   const finalLeaderboard = roundSummary.players.sort((a, b) => b.score - a.score);
 
   return (
-    <div className="game-over" style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="game-over p-5 max-w-5xl mx-auto animate-fade-in">
       {/* 标题 */}
-      <div
-        style={{
-          textAlign: 'center',
-          marginBottom: '40px',
-          backgroundColor: '#E1F5FE',
-          padding: '30px',
-          borderRadius: '12px',
-          border: '3px solid #0288D1',
-        }}
-      >
-        <h1 style={{ margin: '0 0 15px 0', color: '#01579B', fontSize: '48px' }}>
+      <div className="text-center mb-10 bg-blue-50 p-8 rounded-xl border-4 border-blue-400 animate-success">
+        <h1 className="text-5xl font-bold text-blue-900 mb-4">
           🎉 游戏结束 🎉
         </h1>
-        <p style={{ margin: 0, color: '#666', fontSize: '18px' }}>
+        <p className="text-lg text-gray-600">
           感谢所有玩家的参与！
         </p>
       </div>
 
       {/* 获胜者展示 */}
       {winner && (
-        <div
-          style={{
-            textAlign: 'center',
-            marginBottom: '40px',
-            backgroundColor: isMeWinner ? '#FFF9C4' : '#FFF',
-            padding: '40px',
-            borderRadius: '12px',
-            border: `3px solid ${isMeWinner ? '#F9A825' : '#4CAF50'}`,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          }}
+        <div className={`
+          text-center mb-10 p-10 rounded-xl shadow-2xl animate-success
+          ${isMeWinner
+            ? 'bg-yellow-50 border-4 border-yellow-400'
+            : 'bg-white border-4 border-green-500'}
+        `}
+        style={{ animationDelay: '0.3s' }}
         >
-          <div style={{ fontSize: '60px', marginBottom: '20px' }}>👑</div>
-          <h2
-            style={{
-              margin: '0 0 15px 0',
-              color: isMeWinner ? '#F57F17' : '#2E7D32',
-              fontSize: '36px',
-            }}
-          >
+          <div className="text-7xl mb-5 animate-bounce-slow">👑</div>
+          <h2 className={`
+            text-4xl font-bold mb-4
+            ${isMeWinner ? 'text-yellow-700' : 'text-green-700'}
+          `}>
             {isMeWinner ? '恭喜你获得胜利！' : '获胜者'}
           </h2>
-          <div
-            style={{
-              fontSize: '48px',
-              fontWeight: 'bold',
-              color: isMeWinner ? '#E65100' : '#1B5E20',
-              marginBottom: '10px',
-            }}
-          >
+          <div className={`
+            text-5xl font-bold mb-3
+            ${isMeWinner ? 'text-orange-600' : 'text-green-800'}
+          `}>
             {winner.nickname}
           </div>
-          <div style={{ fontSize: '24px', color: '#666' }}>
+          <div className="text-xl text-gray-600">
             最终得分: {winner.score} 分
           </div>
         </div>
       )}
 
       {/* 最终积分榜 */}
-      <div style={{ marginBottom: '40px' }}>
-        <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>最终积分榜</h2>
-        <div
-          style={{
-            backgroundColor: '#fff',
-            padding: '30px',
-            borderRadius: '12px',
-            border: '2px solid #ddd',
-          }}
-        >
+      <div className="mb-10">
+        <h2 className="text-xl font-semibold mb-5 text-center">最终积分榜</h2>
+        <div className="bg-white p-8 rounded-xl border-2 border-gray-200 shadow-lg">
           {finalLeaderboard.map((player, index) => {
             const isMe = player.id === playerId;
             const isWinner = winner && player.id === winner.id;
@@ -98,52 +71,35 @@ export function GameOver() {
             return (
               <div
                 key={player.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '15px 20px',
-                  marginBottom: '10px',
-                  backgroundColor: isWinner
-                    ? '#FFF9C4'
+                className={`
+                  flex justify-between items-center p-4 mb-3 rounded-lg animate-fade-in
+                  ${isWinner
+                    ? 'bg-yellow-50 border-2 border-yellow-400'
                     : isMe
-                    ? '#E3F2FD'
+                    ? 'bg-blue-50 border-2 border-blue-300'
                     : isEliminated
-                    ? '#F5F5F5'
-                    : '#fff',
-                  borderRadius: '8px',
-                  border: isWinner
-                    ? '2px solid #F9A825'
-                    : isEliminated
-                    ? '2px dashed #999'
-                    : '1px solid #ddd',
-                  opacity: isEliminated && !isWinner ? 0.6 : 1,
-                }}
+                    ? 'bg-gray-100 border-2 border-dashed border-gray-400 opacity-60'
+                    : 'bg-white border border-gray-200'}
+                `}
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                  <span
-                    style={{
-                      fontWeight: 'bold',
-                      fontSize: '24px',
-                      color: isWinner ? '#F9A825' : '#666',
-                    }}
-                  >
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl font-bold text-gray-600">
                     {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                   </span>
-                  <span style={{ fontWeight: isMe ? 'bold' : 'normal', fontSize: '18px' }}>
+                  <span className={`text-lg ${isMe ? 'font-bold' : ''}`}>
                     {player.nickname}
                     {player.isHost && ' 👑'}
-                    {isMe && ' (你)'}
-                    {isEliminated && !isWinner && ' (已淘汰)'}
+                    {isMe && <span className="text-blue-600 ml-1">(你)</span>}
+                    {isEliminated && !isWinner && (
+                      <span className="text-red-600 text-sm ml-2">(已淘汰)</span>
+                    )}
                   </span>
                 </div>
-                <div
-                  style={{
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    color: isWinner ? '#F9A825' : isEliminated ? '#999' : '#2196F3',
-                  }}
-                >
+                <div className={`
+                  text-3xl font-bold
+                  ${isWinner ? 'text-yellow-500' : isEliminated ? 'text-gray-400' : 'text-blue-500'}
+                `}>
                   {player.score} 分
                 </div>
               </div>
@@ -153,33 +109,26 @@ export function GameOver() {
       </div>
 
       {/* 游戏统计 */}
-      <div
-        style={{
-          textAlign: 'center',
-          padding: '20px',
-          backgroundColor: '#F5F5F5',
-          borderRadius: '12px',
-        }}
-      >
-        <h3 style={{ margin: '0 0 15px 0' }}>游戏统计</h3>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '40px' }}>
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2196F3' }}>
+      <div className="text-center p-6 bg-gray-100 rounded-xl shadow-md">
+        <h3 className="text-lg font-semibold mb-4">游戏统计</h3>
+        <div className="flex justify-center gap-12">
+          <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <div className="text-4xl font-bold text-blue-500 animate-number-bounce">
               {roundSummary.round}
             </div>
-            <div style={{ color: '#666' }}>总轮次</div>
+            <div className="text-gray-600 text-sm">总轮次</div>
           </div>
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2196F3' }}>
+          <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            <div className="text-4xl font-bold text-blue-500 animate-number-bounce">
               {finalLeaderboard.length}
             </div>
-            <div style={{ color: '#666' }}>参与玩家</div>
+            <div className="text-gray-600 text-sm">参与玩家</div>
           </div>
-          <div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#4CAF50' }}>
+          <div className="animate-fade-in" style={{ animationDelay: '0.7s' }}>
+            <div className="text-4xl font-bold text-green-500 animate-number-bounce">
               {finalLeaderboard.filter((p) => p.score > 0).length}
             </div>
-            <div style={{ color: '#666' }}>存活玩家</div>
+            <div className="text-gray-600 text-sm">存活玩家</div>
           </div>
         </div>
       </div>
