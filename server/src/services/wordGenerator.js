@@ -3,9 +3,31 @@
  */
 
 import { PREDEFINED_WORDS, WORDS_PER_PLAYER } from '../../../shared/constants.js';
+import { generateWordsWithAI } from '../config/openai.js';
 
 /**
- * 生成词汇列表
+ * 生成词汇列表（带AI支持）
+ * @param {number} playerCount - 玩家数量
+ * @returns {Promise<string[]>} 词汇数组（玩家数量 × WORDS_PER_PLAYER）
+ */
+export async function generateWordsAsync(playerCount) {
+  const totalWords = playerCount * WORDS_PER_PLAYER;
+
+  // 尝试使用 AI 生成词汇
+  const aiWords = await generateWordsWithAI(totalWords);
+
+  if (aiWords && aiWords.length >= playerCount) {
+    console.log('[WordGenerator] Using AI-generated words');
+    return aiWords.slice(0, totalWords);
+  }
+
+  // 降级使用预定义词库
+  console.log('[WordGenerator] Falling back to predefined words');
+  return generateWords(playerCount);
+}
+
+/**
+ * 生成词汇列表（同步版本，使用预定义词库）
  * @param {number} playerCount - 玩家数量
  * @returns {string[]} 词汇数组（玩家数量 × WORDS_PER_PLAYER）
  */

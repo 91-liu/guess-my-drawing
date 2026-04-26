@@ -4,7 +4,7 @@
 
 import { Game } from '../models/Game.js';
 import * as roomController from './roomController.js';
-import { generateWords, assignWordsToPlayers, createWordPool } from '../services/wordGenerator.js';
+import { generateWords, generateWordsAsync, assignWordsToPlayers, createWordPool } from '../services/wordGenerator.js';
 import { generateCanvasPoints } from '../services/canvasGenerator.js';
 import { GameTimer } from '../utils/timer.js';
 import { MIN_PLAYERS, MAX_PLAYERS, GAME_PHASES } from '../../../shared/constants.js';
@@ -15,12 +15,15 @@ const games = new Map();
 // 存储所有计时器实例
 const timers = new Map();
 
+// 是否使用AI生成词汇（可通过环境变量配置）
+const USE_AI_WORDS = process.env.USE_AI_WORDS === 'true';
+
 /**
  * 启动游戏
  * @param {string} roomId - 房间ID
- * @returns {Object} 游戏初始化数据
+ * @returns {Promise<Object>} 游戏初始化数据
  */
-export function startGame(roomId) {
+export async function startGame(roomId) {
   const room = roomController.getAllRooms().get(roomId.toUpperCase());
 
   if (!room) {
@@ -47,8 +50,11 @@ export function startGame(roomId) {
   room.currentPhase = GAME_PHASES.DRAWING;
   room.currentRound = 1;
 
-  // 生成词汇
-  const words = generateWords(onlinePlayers.length);
+  // 生成词汇（根据配置选择AI或预定义）
+  const words = USE_AI_WORDS
+    ? await generateWordsAsync(onlinePlayers.length)
+    : generateWords(onlinePlayers.length);
+
   const playerIds = onlinePlayers.map((p) => p.id);
   const playerWordAssignments = assignWordsToPlayers(words, playerIds);
 
@@ -76,6 +82,7 @@ export function startGame(roomId) {
   console.log(`[GameController] Game started in room ${roomId}`);
   console.log(`[GameController] Players: ${onlinePlayers.map((p) => p.nickname).join(', ')}`);
   console.log(`[GameController] Words generated: ${words.length}`);
+  console.log(`[GameController] AI mode: ${USE_AI_WORDS}`);
 
   return {
     game: game.toJSON(),
@@ -322,9 +329,9 @@ export function endRound(roomId) {
 /**
  * 启动下一轮游戏
  * @param {string} roomId - 房间ID
- * @returns {Object} 新一轮的游戏数据
+ * @returns {Promise<Object>} 新一轮的游戏数据
  */
-export function nextRound(roomId) {
+export async function nextRound(roomId) {
   const game = getGame(roomId);
   if (!game) {
     throw new Error('游戏不存在');
@@ -363,8 +370,11 @@ export function nextRound(roomId) {
     player.clearDrawActions();
   });
 
-  // 生成新的词汇
-  const words = generateWords(alivePlayers.length);
+  // 生成新的词汇（根据配置选择AI或预定义）
+  const words = USE_AI_WORDS
+    ? await generateWordsAsync(alivePlayers.length)
+    : generateWords(alivePlayers.length);
+
   const playerIds = alivePlayers.map((p) => p.id);
   const playerWordAssignments = assignWordsToPlayers(words, playerIds);
 

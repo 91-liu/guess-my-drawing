@@ -157,11 +157,11 @@ export function registerRoomHandlers(io, socket) {
   /**
    * 开始游戏事件
    */
-  socket.on(SOCKET_EVENTS.START_GAME, (data, callback) => {
+  socket.on(SOCKET_EVENTS.START_GAME, async (data, callback) => {
     try {
       console.log(`[Socket] Start game request from socket ${socket.id}`);
 
-      const result = gameController.startGame(data.roomId);
+      const result = await gameController.startGame(data.roomId);
 
       // 获取房间实例
       const room = roomController.getAllRooms().get(data.roomId.toUpperCase());
