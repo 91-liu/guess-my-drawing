@@ -3,6 +3,7 @@
  */
 
 import * as roomController from '../controllers/roomController.js';
+import * as gameController from '../controllers/gameController.js';
 import { SOCKET_EVENTS } from '../../shared/constants.js';
 import { sessionManager } from '../utils/sessionManager.js';
 
@@ -150,6 +151,60 @@ export function registerRoomHandlers(io, socket) {
         success: false,
         error: error.message,
       });
+    }
+  });
+
+  /**
+   * 开始游戏事件
+   */
+  socket.on(SOCKET_EVENTS.START_GAME, (data, callback) => {
+    try {
+      console.log(`[Socket] Start game request from socket ${socket.id}`);
+
+      const result = gameController.startGame(data.roomId);
+
+      // 获取房间实例
+      const room = roomController.getAllRooms().get(data.roomId.toUpperCase());
+      if (!room) {
+        throw new Error('房间不存在');
+      }
+
+      // 向每个玩家发送个人消息（包含秘密词汇）
+      room.players.forEach((player) => {
+        if (player.isOnline) {
+          const playerSocket = io.sockets.sockets.get(player.socketId);
+          if (playerSocket) {
+            playerSocket.emit(SOCKET_EVENTS.GAME_STARTED, {
+              success: true,
+              secretWord: result.playerWords[player.id],
+              wordPool: result.wordPool,
+              canvasPoints: result.canvasPoints,
+              round: 1,
+            });
+          }
+        }
+      });
+
+      console.log(`[Socket] Game started in room ${data.roomId}`);
+
+      if (callback) {
+        callback({
+          success: true,
+          data: {
+            round: 1,
+            wordCount: result.wordPool.length,
+            pointCount: result.canvasPoints.length,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('[Socket] Start game error:', error.message);
+      if (callback) {
+        callback({
+          success: false,
+          error: error.message,
+        });
+      }
     }
   });
 

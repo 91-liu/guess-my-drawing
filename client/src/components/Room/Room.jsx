@@ -10,7 +10,7 @@ import { socketService } from '../../services/socket.js';
 export function Room() {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  const { room, playerId, leaveRoom } = useRoomStore();
+  const { room, playerId, leaveRoom, gameStarted, secretWord, wordPool, canvasPoints } = useRoomStore();
   const [copied, setCopied] = useState(false);
 
   // 设置 Socket 监听器
@@ -42,6 +42,19 @@ export function Room() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleStartGame = () => {
+    const socket = socketService.getSocket();
+
+    socket.emit('start_game', { roomId }, (response) => {
+      if (response.success) {
+        console.log('[Room] Game started successfully');
+      } else {
+        console.error('[Room] Failed to start game:', response.error);
+        alert(`无法开始游戏: ${response.error}`);
+      }
+    });
   };
 
   if (!room) {
@@ -140,18 +153,19 @@ export function Room() {
       {isHost && (
         <div style={{ textAlign: 'center' }}>
           <button
-            disabled={room.players.length < 2}
+            onClick={handleStartGame}
+            disabled={room.players.filter((p) => p.isOnline).length < 2}
             style={{
               padding: '15px 30px',
               fontSize: '18px',
-              backgroundColor: room.players.length >= 2 ? '#4CAF50' : '#ccc',
+              backgroundColor: room.players.filter((p) => p.isOnline).length >= 2 ? '#4CAF50' : '#ccc',
               color: 'white',
               border: 'none',
               borderRadius: '5px',
-              cursor: room.players.length >= 2 ? 'pointer' : 'not-allowed',
+              cursor: room.players.filter((p) => p.isOnline).length >= 2 ? 'pointer' : 'not-allowed',
             }}
           >
-            {room.players.length >= 2 ? '开始游戏' : '需要至少2名玩家'}
+            {room.players.filter((p) => p.isOnline).length >= 2 ? '开始游戏' : '需要至少2名在线玩家'}
           </button>
         </div>
       )}

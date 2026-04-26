@@ -15,6 +15,13 @@ export const useRoomStore = create((set, get) => ({
   loading: false,
   error: null,
 
+  // 游戏状态
+  gameStarted: false,
+  secretWord: null,
+  wordPool: [],
+  canvasPoints: [],
+  round: 1,
+
   /**
    * 创建房间
    * @param {string} nickname - 玩家昵称
@@ -182,6 +189,23 @@ export const useRoomStore = create((set, get) => ({
           console.log(`[RoomStore] Player left: ${data.playerId}`);
         }
       }
+    });
+
+    // 监听游戏开始事件
+    socket.on(SOCKET_EVENTS.GAME_STARTED, (data) => {
+      console.log('[RoomStore] Game started:', data);
+
+      set({
+        gameStarted: true,
+        secretWord: data.secretWord,
+        wordPool: data.wordPool,
+        canvasPoints: data.canvasPoints,
+        round: data.round,
+      });
+
+      console.log(`[RoomStore] Secret word: ${data.secretWord}`);
+      console.log(`[RoomStore] Word pool: ${data.wordPool.length} words`);
+      console.log(`[RoomStore] Canvas points: ${data.canvasPoints.length} points`);
     });
   },
 }));
