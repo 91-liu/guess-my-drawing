@@ -207,9 +207,19 @@ export function GuessingPhase() {
       playerId: playerId,
       wordId: word.id,
       word: word.word,
-    });
+    }, (response) => {
+      if (response.success) {
+        console.log('[GuessingPhase] Guess submitted successfully');
 
-    // TODO: 等待服务器响应
+        // 移动到下一个猜词者
+        if (currentGuesserIndex < guessingQueue.length - 1) {
+          setCurrentGuesserIndex(currentGuesserIndex + 1);
+        }
+      } else {
+        console.error('[GuessingPhase] Guess failed:', response.error);
+        alert(`猜词失败: ${response.error}`);
+      }
+    });
   }
 }
 

@@ -60,11 +60,26 @@ export function registerGameHandlers(io, socket) {
     try {
       console.log(`[Socket] Submit guess from socket ${socket.id}`);
 
-      // TODO: 实现猜词逻辑
+      const { roomId, playerId, wordId, word } = data;
+
+      // 处理猜词
+      const result = gameController.submitGuess(roomId, playerId, wordId, word);
+
+      // 广播词汇移除事件给所有玩家
+      io.to(roomId.toUpperCase()).emit(SOCKET_EVENTS.WORD_REMOVED, {
+        wordId: result.wordId,
+        word: result.word,
+        removedBy: result.removedBy,
+        isHit: result.isHit,
+        // 不公布是哪个玩家被扣分（隐藏）
+      });
+
+      console.log(`[Socket] Guess submitted in room ${roomId}: ${word}`);
 
       if (callback) {
         callback({
           success: true,
+          data: result,
         });
       }
     } catch (error) {

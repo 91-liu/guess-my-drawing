@@ -186,3 +186,65 @@ export function stopTimer(roomId) {
     console.log(`[GameController] Timer stopped for room ${roomId}`);
   }
 }
+
+/**
+ * 处理猜词
+ * @param {string} roomId - 房间ID
+ * @param {string} playerId - 玩家ID
+ * @param {string} wordId - 词汇ID
+ * @param {string} word - 猜测的词汇
+ * @returns {Object} 猜词结果
+ */
+export function submitGuess(roomId, playerId, wordId, word) {
+  const game = getGame(roomId);
+  if (!game) {
+    throw new Error('游戏不存在');
+  }
+
+  // 检查游戏阶段
+  if (game.phase !== GAME_PHASES.GUESSING) {
+    throw new Error('当前不是猜词阶段');
+  }
+
+  // 查找词汇
+  const wordObj = game.wordPool.find((w) => w.id === wordId);
+  if (!wordObj) {
+    throw new Error('词汇不存在');
+  }
+
+  if (wordObj.removed) {
+    throw new Error('该词汇已被移除');
+  }
+
+  // 移除词汇
+  const removed = game.removeWord(wordId, playerId);
+  if (!removed) {
+    throw new Error('移除词汇失败');
+  }
+
+  // 检查是否猜中了某玩家的秘密词汇
+  const room = roomController.getAllRooms().get(roomId.toUpperCase());
+  if (!room) {
+    throw new Error('房间不存在');
+  }
+
+  let hitPlayerId = null;
+  room.players.forEach((player) => {
+    if (game.playerWords[player.id] === word) {
+      // 猜中了该玩家的秘密词汇
+      player.updateScore(-1);
+      hitPlayerId = player.id;
+      console.log(`[GameController] Player ${player.nickname} was hit! Secret word: ${word}, New score: ${player.score}`);
+    }
+  });
+
+  console.log(`[GameController] Word removed: ${word} (by player ${playerId})`);
+
+  return {
+    wordId: wordId,
+    word: word,
+    removedBy: playerId,
+    hitPlayerId: hitPlayerId,
+    isHit: hitPlayerId !== null,
+  };
+}

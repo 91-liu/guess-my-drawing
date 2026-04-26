@@ -257,5 +257,31 @@ export const useRoomStore = create((set, get) => ({
 
       console.log(`[RoomStore] Draw action received from player ${playerId}`);
     });
+
+    // 监听词汇移除事件
+    socket.on(SOCKET_EVENTS.WORD_REMOVED, (data) => {
+      const { wordPool } = get();
+
+      console.log(`[RoomStore] Word removed: ${data.word}`);
+
+      // 更新候选词池
+      const updatedWordPool = wordPool.map((w) => {
+        if (w.id === data.wordId) {
+          return {
+            ...w,
+            removed: true,
+            removedBy: data.removedBy,
+          };
+        }
+        return w;
+      });
+
+      set({ wordPool: updatedWordPool });
+
+      // 如果猜中了，显示提示（不公布具体玩家）
+      if (data.isHit) {
+        console.log('[RoomStore] A player was hit!');
+      }
+    });
   },
 }));
