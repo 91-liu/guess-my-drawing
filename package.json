@@ -19,6 +19,7 @@
     "format": "prettier --write \"**/*.{js,jsx,json,md}\""
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^1.6.1",
     "concurrently": "^8.2.2",
     "prettier": "^3.2.5",
     "vitest": "^1.6.1"
