@@ -3,7 +3,7 @@
  */
 
 import io from 'socket.io-client';
-import { SERVER_PORT } from '../../shared/constants.js';
+import { SERVER_PORT } from '@shared/constants.js';
 
 const SERVER_URL = `http://localhost:${SERVER_PORT}`;
 

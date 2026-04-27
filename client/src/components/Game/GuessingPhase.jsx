@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRoomStore } from '../../store/useRoomStore';
 import { socketService } from '../../services/socket.js';
-import { SOCKET_EVENTS } from '../../../shared/constants.js';
+import { SOCKET_EVENTS } from '@shared/constants.js';
 
 export function GuessingPhase() {
   const { roomId, room, playerId, wordPool, playerDrawings } = useRoomStore();
@@ -278,5 +278,3 @@ function CanvasThumbnail({ actions }) {
     />
   );
 }
-
-import { useRef } from 'react';

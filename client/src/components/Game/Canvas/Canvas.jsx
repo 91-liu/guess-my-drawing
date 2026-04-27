@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../../../../shared/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@shared/constants.js';
 
 export function Canvas({ points, lines = [], onPointClick, disabled = false }) {
   const canvasRef = useRef(null);

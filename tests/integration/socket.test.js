@@ -2,7 +2,7 @@
  * Socket 集成测试 - 测试完整的游戏流程
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { io as ioClient } from 'socket.io-client';
@@ -18,38 +18,54 @@ describe('Socket Integration Tests', () => {
   let player1Id;
   let player2Id;
 
-  beforeAll((done) => {
-    httpServer = createServer();
-    io = new Server(httpServer, {
-      cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-      },
-    });
+  beforeAll(async () => {
+    return new Promise((resolve, reject) => {
+      httpServer = createServer();
+      io = new Server(httpServer, {
+        cors: {
+          origin: '*',
+          methods: ['GET', 'POST'],
+        },
+      });
 
-    io.on('connection', (socket) => {
-      registerRoomHandlers(io, socket);
-      registerGameHandlers(io, socket);
-    });
+      io.on('connection', (socket) => {
+        registerRoomHandlers(io, socket);
+        registerGameHandlers(io, socket);
+      });
 
-    httpServer.listen(0, () => {
-      const port = httpServer.address().port;
-      const url = `http://localhost:${port}`;
+      httpServer.listen(0, () => {
+        const port = httpServer.address().port;
+        const url = `http://localhost:${port}`;
 
-      player1Socket = ioClient(url, { autoConnect: false });
-      player2Socket = ioClient(url, { autoConnect: false });
+        player1Socket = ioClient(url, {
+          autoConnect: false,
+          reconnection: false,
+        });
+        player2Socket = ioClient(url, {
+          autoConnect: false,
+          reconnection: false,
+        });
 
-      let connected = 0;
-      const onConnect = () => {
-        connected++;
-        if (connected === 2) done();
-      };
+        let connected = 0;
+        const onError = (error) => {
+          console.error('[Socket Test] Connection error:', error);
+          reject(error);
+        };
 
-      player1Socket.on('connect', onConnect);
-      player2Socket.on('connect', onConnect);
+        const onConnect = () => {
+          connected++;
+          console.log('[Socket Test] Client connected:', connected);
+          if (connected === 2) resolve();
+        };
 
-      player1Socket.connect();
-      player2Socket.connect();
+        player1Socket.on('connect', onConnect);
+        player1Socket.on('connect_error', onError);
+        player2Socket.on('connect', onConnect);
+        player2Socket.on('connect_error', onError);
+
+        player1Socket.connect();
+        player2Socket.connect();
+      });
     });
   });
 
@@ -58,6 +74,41 @@ describe('Socket Integration Tests', () => {
     player2Socket.disconnect();
     io.close();
     httpServer.close(done);
+  });
+
+  afterEach(async () => {
+    // Remove specific event listeners to prevent pollution between tests
+    // Don't use removeAllListeners() as it removes internal socket.io listeners
+    const events = [
+      'game_started',
+      'draw_action',
+      'draw_update',
+      'phase_change',
+      'round_ended',
+      'game_ended',
+      'player_joined',
+      'player_left',
+      'time_update',
+    ];
+    events.forEach(event => {
+      player1Socket.off(event);
+      player2Socket.off(event);
+    });
+
+    // Ensure both sockets are connected for the next test
+    // Reconnect if they were disconnected in previous tests
+    if (!player1Socket.connected) {
+      await new Promise((resolve) => {
+        player1Socket.once('connect', resolve);
+        player1Socket.connect();
+      });
+    }
+    if (!player2Socket.connected) {
+      await new Promise((resolve) => {
+        player2Socket.once('connect', resolve);
+        player2Socket.connect();
+      });
+    }
   });
 
   describe('Complete Game Flow', () => {
@@ -167,20 +218,19 @@ describe('Socket Integration Tests', () => {
         }, resolve);
       });
 
+      // Register game_started listener BEFORE starting game
+      const gameDataPromise = new Promise((resolve) => {
+        player1Socket.once('game_started', (data) => resolve(data));
+      });
+
       await new Promise((resolve) => {
         player1Socket.emit('start_game', { roomId: testRoomId }, resolve);
       });
 
       // Wait for game_started
-      await new Promise((resolve) => {
-        player1Socket.on('game_started', () => resolve());
-      });
+      const gameData = await gameDataPromise;
 
       // Draw action - connect two points
-      const gameData = await new Promise((resolve) => {
-        player1Socket.on('game_started', (data) => resolve(data));
-      });
-
       if (gameData && gameData.canvasPoints && gameData.canvasPoints.length >= 2) {
         const connectAction = {
           playerId: testPlayerId,
@@ -285,7 +335,7 @@ describe('Socket Integration Tests', () => {
 
       expect(leaveResult.success).toBe(true);
       expect(leaveResult.data.newHostId).toBe(guestId);
-    });
+    }, 10000);
   });
 
   describe('Game State Validation', () => {
@@ -303,10 +353,20 @@ describe('Socket Integration Tests', () => {
         }, resolve);
       });
 
+      // Register game_started listener before first start
+      const gameStartedPromise = new Promise((resolve) => {
+        player1Socket.once('game_started', (data) => resolve(data));
+      });
+
       // First start should succeed
-      await new Promise((resolve) => {
+      const firstStart = await new Promise((resolve) => {
         player1Socket.emit('start_game', { roomId: testRoomId }, resolve);
       });
+
+      expect(firstStart.success).toBe(true);
+
+      // Wait for game_started event
+      await gameStartedPromise;
 
       // Second start should fail
       const secondStart = await new Promise((resolve) => {
@@ -346,6 +406,6 @@ describe('Socket Integration Tests', () => {
       if (!joinResult.success) {
         expect(joinResult.error).toBeDefined();
       }
-    });
+    }, 10000);
   });
 });

@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '../../store/useRoomStore';
-import { validateNickname } from '../../../shared/validators.js';
+import { validateNickname } from '@shared/validators.js';
 
 export function CreateRoomForm() {
   const [nickname, setNickname] = useState('');

@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { socketService } from '../services/socket.js';
-import { SOCKET_EVENTS } from '../../shared/constants.js';
+import { SOCKET_EVENTS } from '@shared/constants.js';
 
 export const useRoomStore = create((set, get) => ({
   // 状态

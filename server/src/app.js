@@ -13,16 +13,28 @@ import { registerGameHandlers } from './socket/gameHandlers.js';
 const app = express();
 const httpServer = createServer(app);
 
+// CORS 配置 - 根据环境自动适配
+const corsOrigins = process.env.NODE_ENV === 'production'
+  ? (process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [])
+  : ['http://localhost:5173', 'http://localhost:5174'];
+
+console.log(`[Server] CORS allowed origins: ${corsOrigins.join(', ')}`);
+
 // Socket.io 服务器
 const io = new Server(httpServer, {
   cors: {
-    origin: `http://localhost:5173`,
+    origin: corsOrigins,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
 // 中间件
-app.use(cors());
+app.use(cors({
+  origin: corsOrigins,
+  methods: ['GET', 'POST'],
+  credentials: true,
+}));
 app.use(express.json());
 
 // API 路由

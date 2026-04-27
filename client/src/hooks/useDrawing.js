@@ -4,7 +4,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { socketService } from '../../services/socket.js';
-import { SOCKET_EVENTS, DRAW_ACTION_TYPES } from '../../../shared/constants.js';
+import { SOCKET_EVENTS, DRAW_ACTION_TYPES } from '@shared/constants.js';
 
 export function useDrawing(playerId, roomId) {
   const [selectedPoint, setSelectedPoint] = useState(null);

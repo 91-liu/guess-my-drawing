@@ -17,46 +17,52 @@ describe('API Integration Tests', () => {
   let io;
   let clientSocket;
 
-  beforeAll((done) => {
-    // 创建Express应用
-    app = express();
-    app.use(express.json());
+  beforeAll(async () => {
+    return new Promise((resolve) => {
+      // 创建Express应用
+      app = express();
+      app.use(express.json());
 
-    // 创建HTTP服务器
-    httpServer = createServer(app);
-    io = new Server(httpServer, {
-      cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-      },
-    });
-
-    // 注册Socket处理器
-    io.on('connection', (socket) => {
-      registerRoomHandlers(io, socket);
-      registerGameHandlers(io, socket);
-    });
-
-    // 健康检查端点
-    app.get('/api/health', (req, res) => {
-      res.json({ status: 'ok' });
-    });
-
-    httpServer.listen(0, () => {
-      const port = httpServer.address().port;
-      clientSocket = ioClient(`http://localhost:${port}`, {
-        autoConnect: false,
+      // 创建HTTP服务器
+      httpServer = createServer(app);
+      io = new Server(httpServer, {
+        cors: {
+          origin: '*',
+          methods: ['GET', 'POST'],
+        },
       });
-      done();
+
+      // 注册Socket处理器
+      io.on('connection', (socket) => {
+        registerRoomHandlers(io, socket);
+        registerGameHandlers(io, socket);
+      });
+
+      // 健康检查端点
+      app.get('/api/health', (req, res) => {
+        res.json({ status: 'ok' });
+      });
+
+      httpServer.listen(0, () => {
+        const port = httpServer.address().port;
+        clientSocket = ioClient(`http://localhost:${port}`, {
+          autoConnect: false,
+        });
+        resolve();
+      });
     });
   });
 
-  afterAll((done) => {
-    if (clientSocket.connected) {
+  afterAll(async () => {
+    if (clientSocket && clientSocket.connected) {
       clientSocket.disconnect();
     }
-    io.close();
-    httpServer.close(done);
+    if (io) {
+      io.close();
+    }
+    if (httpServer) {
+      await new Promise((resolve) => httpServer.close(resolve));
+    }
   });
 
   describe('Health Check', () => {
