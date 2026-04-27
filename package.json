@@ -19,9 +19,11 @@
     "format": "prettier --write \"**/*.{js,jsx,json,md}\""
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-v8": "^1.6.1",
     "concurrently": "^8.2.2",
+    "playwright": "^1.59.1",
     "prettier": "^3.2.5",
     "supertest": "^7.2.2",
     "vitest": "^1.6.1"
