@@ -89,17 +89,20 @@ export function validateDrawAction(action) {
     return { valid: false, error: '绘画动作无效' };
   }
 
-  if (!action.type || !action.playerId) {
-    return { valid: false, error: '绘画动作缺少必要字段' };
+  if (!action.type) {
+    return { valid: false, error: '绘画动作缺少类型字段' };
   }
 
   if (action.type === 'connect') {
     if (!action.point1 || !action.point2) {
       return { valid: false, error: '连线动作必须包含两个点' };
     }
+    if (action.point1.id === action.point2.id) {
+      return { valid: false, error: '不能连接同一个点' };
+    }
   } else if (action.type === 'light_up') {
-    if (!action.point) {
-      return { valid: false, error: '点亮动作必须包含一个点' };
+    if (!action.pointId && !action.point) {
+      return { valid: false, error: '点亮动作必须包含点信息' };
     }
   } else {
     return { valid: false, error: '未知的绘画动作类型' };

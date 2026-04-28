@@ -6,9 +6,12 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { SERVER_PORT } from '../../shared/constants.js';
+import { SERVER_PORT, SOCKET_EVENTS } from '../../shared/constants.js';
 import { registerRoomHandlers } from './socket/roomHandlers.js';
 import { registerGameHandlers } from './socket/gameHandlers.js';
+import { sessionManager } from './utils/sessionManager.js';
+import { drawActionLimiter } from './utils/rateLimiter.js';
+import * as roomController from './controllers/roomController.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -56,6 +59,33 @@ io.on('connection', (socket) => {
   socket.on('test_event', (data) => {
     console.log('[Socket] Test event received:', data);
     socket.emit('test_response', { message: 'Server received your message', data });
+  });
+
+  // 断开连接处理
+  socket.on('disconnect', () => {
+    console.log(`[Socket] Player disconnected: ${socket.id}`);
+
+    // 清理速率限制记录
+    drawActionLimiter.clear(socket.id);
+
+    // 处理玩家离开房间
+    const session = sessionManager.getSession(socket.id);
+    if (session) {
+      const { roomId, playerId } = session;
+      console.log(`[Socket] Player ${playerId} disconnected from room ${roomId}`);
+
+      // 标记玩家为离线（支持重连）
+      const reconnectToken = sessionManager.markPlayerOffline(playerId, roomId);
+
+      // 通知房间内其他玩家
+      socket.to(roomId).emit(SOCKET_EVENTS.PLAYER_LEFT, {
+        playerId,
+        playerName: roomController.getAllRooms().get(roomId)?.getPlayer(playerId)?.nickname,
+        isOffline: true,
+      });
+
+      sessionManager.removeSession(socket.id);
+    }
   });
 });
 

@@ -4,6 +4,8 @@
 
 import * as gameController from '../controllers/gameController.js';
 import { SOCKET_EVENTS } from '../../../shared/constants.js';
+import { validateDrawAction } from '../../../shared/validators.js';
+import { drawActionLimiter } from '../utils/rateLimiter.js';
 
 /**
  * 注册游戏相关 Socket 事件
@@ -18,7 +20,35 @@ export function registerGameHandlers(io, socket) {
     try {
       console.log(`[Socket] Draw action from socket ${socket.id}`);
 
+      // 从 session 获取已验证的 playerId
+      const session = sessionManager.getSession(socket.id);
+      if (!session) {
+        throw new Error('未找到会话，请重新加入房间');
+      }
+
+      const { roomId: sessionRoomId, playerId: verifiedPlayerId } = session;
+
+      // 速率限制检查
+      if (!drawActionLimiter.isAllowed(socket.id)) {
+        throw new Error('操作过于频繁，请稍后再试');
+      }
+
       const { roomId, playerId, action } = data;
+
+      // 验证 roomId 和 playerId 匹配 session
+      if (roomId.toUpperCase() !== sessionRoomId.toUpperCase()) {
+        throw new Error('房间ID不匹配');
+      }
+
+      if (playerId !== verifiedPlayerId) {
+        throw new Error('玩家ID不匹配');
+      }
+
+      // 验证绘画动作
+      const validation = validateDrawAction(action);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
 
       // 获取游戏实例
       const game = gameController.getGame(roomId);
@@ -26,13 +56,24 @@ export function registerGameHandlers(io, socket) {
         throw new Error('游戏不存在');
       }
 
+      // 验证玩家存在
+      const room = roomController.getAllRooms().get(roomId.toUpperCase());
+      if (!room) {
+        throw new Error('房间不存在');
+      }
+
+      const player = room.getPlayer(verifiedPlayerId);
+      if (!player) {
+        throw new Error('玩家不存在');
+      }
+
       // 添加绘画动作到游戏
-      game.addDrawAction(playerId, action);
+      game.addDrawAction(verifiedPlayerId, action);
 
       // 广播给房间内所有玩家（包括发送者）
-      io.to(roomId).emit(SOCKET_EVENTS.DRAW_UPDATE, {
+      io.to(roomId.toUpperCase()).emit(SOCKET_EVENTS.DRAW_UPDATE, {
         action: action,
-        playerId: playerId,
+        playerId: verifiedPlayerId,
       });
 
       console.log(`[Socket] Draw action broadcast in room ${roomId}`);

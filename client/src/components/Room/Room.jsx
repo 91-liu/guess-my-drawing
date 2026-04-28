@@ -15,10 +15,8 @@ export function Room() {
 
   // 设置 Socket 监听器
   useEffect(() => {
-    console.log('[Room] ========== useEffect running - setting up listeners ==========');
     socketService.connect();
     useRoomStore.getState().setupListeners();
-    console.log('[Room] ========== useEffect finished ==========');
 
     return () => {
       // 清理监听器（如果需要）
