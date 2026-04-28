@@ -8,6 +8,7 @@ import { Room } from './components/Room/Room';
 import { Game } from './components/Game/Game';
 import { socketService } from './services/socket.js';
 import { useEffect } from 'react';
+import { useRoomStore } from './store/useRoomStore.js';
 
 function App() {
   // 在应用启动时连接 Socket
@@ -27,7 +28,6 @@ function App() {
 
 // Room 页面包装器 - 在游戏开始时显示 Game 组件
 function RoomWithGame() {
-  const { useRoomStore } = require('./store/useRoomStore.js');
   const gameStarted = useRoomStore((state) => state.gameStarted);
 
   return (
