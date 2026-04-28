@@ -25,6 +25,7 @@ export const useRoomStore = create((set, get) => ({
   phase: 'waiting',
   playerDrawings: {}, // { playerId: [drawActions] }
   roundSummary: null, // 回合结算数据
+  listenersSetup: false, // 防止重复注册监听器
 
   /**
    * 创建房间
@@ -138,6 +139,12 @@ export const useRoomStore = create((set, get) => ({
    * 监听房间事件
    */
   setupListeners: () => {
+    // 防止重复注册监听器
+    if (get().listenersSetup) {
+      console.log('[RoomStore] Listeners already setup, skipping');
+      return;
+    }
+
     const socket = socketService.getSocket();
 
     // 监听玩家加入事件
@@ -317,5 +324,9 @@ export const useRoomStore = create((set, get) => ({
       console.log(`[RoomStore] New word pool: ${data.wordPool.length} words`);
       console.log(`[RoomStore] New canvas points: ${data.canvasPoints.length} points`);
     });
+
+    // 标记监听器已注册
+    set({ listenersSetup: true });
+    console.log('[RoomStore] Socket listeners setup complete');
   },
 }));
