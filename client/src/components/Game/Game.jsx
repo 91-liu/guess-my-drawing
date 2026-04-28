@@ -273,6 +273,13 @@ export function Game() {
           pointId: point.id,
           point: { id: point.id, x: point.x, y: point.y },
         },
+      }, (response) => {
+        if (response && response.success) {
+          console.log('[Game] Light up action confirmed');
+        } else {
+          console.error('[Game] Light up failed:', response?.error);
+          alert(`点亮失败: ${response?.error || '未知错误'}`);
+        }
       });
 
       console.log('[Game] Light up point:', point.id);
@@ -294,6 +301,13 @@ export function Game() {
               point1: { id: selectedPoint.id, x: selectedPoint.x, y: selectedPoint.y },
               point2: { id: point.id, x: point.x, y: point.y },
             },
+          }, (response) => {
+            if (response && response.success) {
+              console.log('[Game] Connect action confirmed');
+            } else {
+              console.error('[Game] Connect failed:', response?.error);
+              alert(`连接失败: ${response?.error || '未知错误'}`);
+            }
           });
 
           console.log('[Game] Connect points:', selectedPoint.id, '->', point.id);
