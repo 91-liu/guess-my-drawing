@@ -2,7 +2,7 @@
  * 游戏结束组件 - 显示获胜者和最终积分榜
  */
 
-import { useRoomStore } from '../../store/useRoomStore';
+import { useRoomStore } from '../../../store/useRoomStore';
 
 export function GameOver() {
   const { room, playerId, roundSummary } = useRoomStore();
