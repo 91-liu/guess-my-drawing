@@ -2,12 +2,15 @@
  * 游戏页面组件
  */
 
+import { useState } from 'react';
 import { useRoomStore } from '../../store/useRoomStore';
 import { Canvas } from './Canvas/Canvas';
 import { Timer } from './Timer';
 import { GuessingPhase } from './GuessingPhase';
 import { RoundSummary } from './RoundSummary';
 import { GameOver } from './GameOver/GameOver';
+import { socketService } from '../../services/socket.js';
+import { SOCKET_EVENTS } from '@shared/constants.js';
 
 export function Game() {
   const {
@@ -20,7 +23,12 @@ export function Game() {
     canvasPoints,
     round,
     phase,
+    playerDrawings,
   } = useRoomStore();
+
+  // 绘画状态
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const [drawMode, setDrawMode] = useState('connect'); // 'connect' 或 'light_up'
 
   // 如果游戏未开始，不渲染
   if (!gameStarted || !canvasPoints || canvasPoints.length === 0) {
@@ -28,6 +36,17 @@ export function Game() {
   }
 
   const currentPlayer = room?.players.find((p) => p.id === playerId);
+
+  // 获取当前玩家的绘画动作
+  const myDrawActions = playerDrawings[playerId] || [];
+
+  // 将绘画动作转换为线条
+  const lines = myDrawActions
+    .filter((action) => action.type === 'connect')
+    .map((action) => ({
+      startPoint: action.point1,
+      endPoint: action.point2,
+    }));
 
   return (
     <div className="game" style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
@@ -143,12 +162,14 @@ export function Game() {
           {/* 画布 */}
           <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
             <h3 style={{ margin: '0 0 15px 0' }}>绘画区域</h3>
-            <Canvas points={canvasPoints} onPointClick={handlePointClick} disabled={false} />
-            <div style={{ marginTop: '15px', textAlign: 'center' }}>
+
+            {/* 模式选择 */}
+            <div style={{ marginBottom: '15px', textAlign: 'center' }}>
               <button
+                onClick={() => setDrawMode('connect')}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#2196F3',
+                  backgroundColor: drawMode === 'connect' ? '#2196F3' : '#ccc',
                   color: 'white',
                   border: 'none',
                   borderRadius: '5px',
@@ -156,20 +177,37 @@ export function Game() {
                   marginRight: '10px',
                 }}
               >
-                连接两点
+                连接两点 {drawMode === 'connect' && '✓'}
               </button>
               <button
+                onClick={() => setDrawMode('light_up')}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#FF9800',
+                  backgroundColor: drawMode === 'light_up' ? '#FF9800' : '#ccc',
                   color: 'white',
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
                 }}
               >
-                点亮点
+                点亮点 {drawMode === 'light_up' && '✓'}
               </button>
+            </div>
+
+            <Canvas
+              points={canvasPoints.map(p => ({
+                ...p,
+                isLit: myDrawActions.some(a => a.type === 'light_up' && a.pointId === p.id)
+              }))}
+              lines={lines}
+              onPointClick={handlePointClick}
+              disabled={false}
+            />
+
+            <div style={{ marginTop: '15px', textAlign: 'center', color: '#666' }}>
+              {drawMode === 'connect'
+                ? (selectedPoint ? '已选择第一个点，请点击第二个点进行连接' : '点击选择第一个点')
+                : '点击任意点点亮它'}
             </div>
           </div>
 
@@ -222,7 +260,47 @@ export function Game() {
   );
 
   function handlePointClick(point) {
-    console.log('[Game] Point clicked:', point);
-    // TODO: 实现点选逻辑（连接或点亮）
+    console.log('[Game] Point clicked:', point, 'Mode:', drawMode);
+
+    if (drawMode === 'light_up') {
+      // 点亮模式：直接发送点亮动作
+      const socket = socketService.getSocket();
+      socket.emit(SOCKET_EVENTS.DRAW_ACTION, {
+        roomId,
+        playerId,
+        action: {
+          type: 'light_up',
+          pointId: point.id,
+          point: { id: point.id, x: point.x, y: point.y },
+        },
+      });
+
+      console.log('[Game] Light up point:', point.id);
+    } else if (drawMode === 'connect') {
+      // 连接模式：需要选择两个点
+      if (!selectedPoint) {
+        // 选择第一个点
+        setSelectedPoint(point);
+        console.log('[Game] First point selected:', point.id);
+      } else {
+        // 选择第二个点，发送连接动作
+        if (selectedPoint.id !== point.id) {
+          const socket = socketService.getSocket();
+          socket.emit(SOCKET_EVENTS.DRAW_ACTION, {
+            roomId,
+            playerId,
+            action: {
+              type: 'connect',
+              point1: { id: selectedPoint.id, x: selectedPoint.x, y: selectedPoint.y },
+              point2: { id: point.id, x: point.x, y: point.y },
+            },
+          });
+
+          console.log('[Game] Connect points:', selectedPoint.id, '->', point.id);
+        }
+        // 清除选择
+        setSelectedPoint(null);
+      }
+    }
   }
 }
