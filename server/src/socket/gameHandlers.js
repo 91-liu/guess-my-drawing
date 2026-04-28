@@ -18,7 +18,7 @@ export function registerGameHandlers(io, socket) {
     try {
       console.log(`[Socket] Draw action from socket ${socket.id}`);
 
-      const { roomId, action } = data;
+      const { roomId, playerId, action } = data;
 
       // 获取游戏实例
       const game = gameController.getGame(roomId);
@@ -27,12 +27,12 @@ export function registerGameHandlers(io, socket) {
       }
 
       // 添加绘画动作到游戏
-      game.addDrawAction(action.playerId, action);
+      game.addDrawAction(playerId, action);
 
-      // 广播给房间内其他玩家
-      socket.to(roomId).emit(SOCKET_EVENTS.DRAW_UPDATE, {
+      // 广播给房间内所有玩家（包括发送者）
+      io.to(roomId).emit(SOCKET_EVENTS.DRAW_UPDATE, {
         action: action,
-        playerId: action.playerId,
+        playerId: playerId,
       });
 
       console.log(`[Socket] Draw action broadcast in room ${roomId}`);
