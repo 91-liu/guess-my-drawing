@@ -3,9 +3,13 @@
  */
 
 import io from 'socket.io-client';
-import { SERVER_PORT } from '@shared/constants.js';
 
-const SERVER_URL = `http://localhost:${SERVER_PORT}`;
+// 根据环境动态选择服务器地址
+const SERVER_URL = import.meta.env.VITE_SOCKET_URL ||
+                   import.meta.env.VITE_API_URL ||
+                   'http://localhost:3000';
+
+console.log('[SocketService] Connecting to:', SERVER_URL);
 
 class SocketService {
   constructor() {
