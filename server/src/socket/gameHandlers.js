@@ -3,9 +3,11 @@
  */
 
 import * as gameController from '../controllers/gameController.js';
+import * as roomController from '../controllers/roomController.js';
 import { SOCKET_EVENTS } from '../../../shared/constants.js';
 import { validateDrawAction } from '../../../shared/validators.js';
 import { drawActionLimiter } from '../utils/rateLimiter.js';
+import { sessionManager } from '../utils/sessionManager.js';
 
 /**
  * 注册游戏相关 Socket 事件
