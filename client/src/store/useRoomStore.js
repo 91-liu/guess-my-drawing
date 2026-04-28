@@ -204,7 +204,11 @@ export const useRoomStore = create((set, get) => ({
 
     // 监听游戏开始事件
     socket.on(SOCKET_EVENTS.GAME_STARTED, (data) => {
-      console.log('[RoomStore] Game started:', data);
+      console.log('[RoomStore] ========== GAME_STARTED event received ==========');
+      console.log('[RoomStore] Current state before update:', {
+        gameStarted: get().gameStarted,
+        listenersSetup: get().listenersSetup,
+      });
 
       set({
         gameStarted: true,
@@ -212,11 +216,17 @@ export const useRoomStore = create((set, get) => ({
         wordPool: data.wordPool,
         canvasPoints: data.canvasPoints,
         round: data.round,
+        phase: 'drawing',
       });
 
+      console.log('[RoomStore] State after GAME_STARTED update:', {
+        gameStarted: get().gameStarted,
+        secretWord: get().secretWord,
+      });
       console.log(`[RoomStore] Secret word: ${data.secretWord}`);
       console.log(`[RoomStore] Word pool: ${data.wordPool.length} words`);
       console.log(`[RoomStore] Canvas points: ${data.canvasPoints.length} points`);
+      console.log('[RoomStore] ========== GAME_STARTED handler finished ==========');
     });
 
     // 监听时间更新事件
