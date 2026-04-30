@@ -164,13 +164,7 @@ describe('Socket Integration Tests', () => {
       expect(player2GameData.secretWord).toBeDefined();
       expect(player2GameData.secretWord).not.toBe(player1GameData.secretWord);
 
-      // Step 4: Test drawing action
-      const drawAction = {
-        playerId: player1Id,
-        type: 'light_up',
-        point: player1GameData.canvasPoints[0],
-      };
-
+      // Step 4: Test drawing action with correct data structure
       const drawUpdatePromise = new Promise((resolve) => {
         player2Socket.on('draw_update', (data) => {
           resolve(data);
@@ -180,7 +174,12 @@ describe('Socket Integration Tests', () => {
       const drawResult = await new Promise((resolve) => {
         player1Socket.emit('draw_action', {
           roomId: roomId,
-          action: drawAction,
+          playerId: player1Id,  // Correct: playerId outside action
+          action: {
+            type: 'light_up',
+            pointId: player1GameData.canvasPoints[0].id,
+            point: player1GameData.canvasPoints[0],
+          },
         }, resolve);
       });
 
@@ -230,24 +229,22 @@ describe('Socket Integration Tests', () => {
       // Wait for game_started
       const gameData = await gameDataPromise;
 
-      // Draw action - connect two points
-      if (gameData && gameData.canvasPoints && gameData.canvasPoints.length >= 2) {
-        const connectAction = {
-          playerId: testPlayerId,
-          type: 'connect',
-          point1: gameData.canvasPoints[0],
-          point2: gameData.canvasPoints[1],
-        };
+      // Draw action - connect two points (correct data structure)
+if (gameData && gameData.canvasPoints && gameData.canvasPoints.length >= 2) {
+  const drawResult = await new Promise((resolve) => {
+    player1Socket.emit('draw_action', {
+      roomId: testRoomId,
+      playerId: testPlayerId,  // Correct: playerId outside action
+      action: {
+        type: 'connect',
+        point1: gameData.canvasPoints[0],
+        point2: gameData.canvasPoints[1],
+      },
+    }, resolve);
+  });
 
-        const drawResult = await new Promise((resolve) => {
-          player1Socket.emit('draw_action', {
-            roomId: testRoomId,
-            action: connectAction,
-          }, resolve);
-        });
-
-        expect(drawResult.success).toBe(true);
-      }
+  expect(drawResult.success).toBe(true);
+}
     }, 10000);
 
     it('should handle disconnect and reconnect', async () => {

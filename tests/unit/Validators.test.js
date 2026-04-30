@@ -146,19 +146,9 @@ describe('Validators', () => {
       expect(validateDrawAction(action).valid).toBe(false);
     });
 
-    it('should reject action missing playerId', () => {
-      const action = {
-        type: 'connect',
-        point1: { id: 'p1' },
-        point2: { id: 'p2' },
-      };
-      expect(validateDrawAction(action).valid).toBe(false);
-    });
-
     it('should reject connect action missing points', () => {
       const action = {
         type: 'connect',
-        playerId: 'player1',
       };
       expect(validateDrawAction(action).valid).toBe(false);
     });
@@ -166,7 +156,6 @@ describe('Validators', () => {
     it('should reject light_up action missing point', () => {
       const action = {
         type: 'light_up',
-        playerId: 'player1',
       };
       expect(validateDrawAction(action).valid).toBe(false);
     });
