@@ -19,7 +19,7 @@ const httpServer = createServer(app);
 // CORS 配置 - 根据环境自动适配
 const corsOrigins = process.env.NODE_ENV === 'production'
   ? (process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [])
-  : ['http://localhost:5173', 'http://localhost:5174'];
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
 
 console.log(`[Server] CORS allowed origins: ${corsOrigins.join(', ')}`);
 
@@ -39,6 +39,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+
+// 定期清理速率限制器过期记录
+setInterval(() => drawActionLimiter.cleanup(), 60000); // 每分钟
 
 // API 路由
 app.get('/api/health', (req, res) => {

@@ -103,10 +103,27 @@ export function registerGameHandlers(io, socket) {
     try {
       console.log(`[Socket] Submit guess from socket ${socket.id}`);
 
+      // 从 session 获取已验证的 playerId
+      const session = sessionManager.getSession(socket.id);
+      if (!session) {
+        throw new Error('未找到会话，请重新加入房间');
+      }
+
+      const { roomId: sessionRoomId, playerId: verifiedPlayerId } = session;
+
       const { roomId, playerId, wordId, word } = data;
 
+      // 验证 roomId 和 playerId 匹配 session
+      if (roomId.toUpperCase() !== sessionRoomId.toUpperCase()) {
+        throw new Error('房间ID不匹配');
+      }
+
+      if (playerId !== verifiedPlayerId) {
+        throw new Error('玩家ID不匹配');
+      }
+
       // 处理猜词
-      const result = gameController.submitGuess(roomId, playerId, wordId, word);
+      const result = gameController.submitGuess(roomId, verifiedPlayerId, wordId, word);
 
       // 广播词汇移除事件给所有玩家
       io.to(roomId.toUpperCase()).emit(SOCKET_EVENTS.WORD_REMOVED, {
@@ -143,7 +160,18 @@ export function registerGameHandlers(io, socket) {
     try {
       console.log(`[Socket] End turn from socket ${socket.id}`);
 
+      // 从 session 获取房间ID
+      const session = sessionManager.getSession(socket.id);
+      if (!session) {
+        throw new Error('未找到会话，请重新加入房间');
+      }
+
       const { roomId } = data;
+
+      // 验证 roomId 匹配 session
+      if (roomId.toUpperCase() !== session.roomId.toUpperCase()) {
+        throw new Error('房间ID不匹配');
+      }
 
       // 结束回合
       const roundSummary = gameController.endRound(roomId);
@@ -177,7 +205,18 @@ export function registerGameHandlers(io, socket) {
     try {
       console.log(`[Socket] Next round from socket ${socket.id}`);
 
+      // 从 session 获取房间ID
+      const session = sessionManager.getSession(socket.id);
+      if (!session) {
+        throw new Error('未找到会话，请重新加入房间');
+      }
+
       const { roomId } = data;
+
+      // 验证 roomId 匹配 session
+      if (roomId.toUpperCase() !== session.roomId.toUpperCase()) {
+        throw new Error('房间ID不匹配');
+      }
 
       // 启动下一轮
       const nextRoundData = await gameController.nextRound(roomId);
